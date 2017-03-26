@@ -1,36 +1,11 @@
 import string
-import scipy.linalg.blas
 import theano
 import numpy as np
 import theano.tensor as T
 import plot_utility
+from WeightBias import WeightBias
 
 theano.config.optimizer="fast_compile"
-class WeightBias:
-    def __init__(self,name,in_len,out_len):
-        self.name = name
-
-        rand_weight_vals = np.random.randn(in_len*out_len)/in_len**(0.5**0.5)
-        rand_weight = np.reshape(rand_weight_vals,(out_len,in_len))
-        self.W = theano.shared(rand_weight,name=self.weight_name())
-
-        bias_init = np.zeros(out_len)
-        self.b = theano.shared(bias_init,name=self.bias_name())
-
-    def calc_output(self,in_vec):
-        return self.b + T.dot(self.W,in_vec)
-
-    def bias_name(self):
-        return self.name+"b"
-    def weight_name(self):
-        return self.name+"W"
-    def wb_list(self):
-        return [self.W,self.b]
-    def update(self,error):
-        Wg,bg = T.grad(error,self.wb_list())
-
-        c = train_update_const
-        return [(self.W,self.W-Wg*c),(self.b,self.b-bg*c)]
 
 inlen = 26
 outlen = 26
@@ -53,8 +28,8 @@ actual = outvec
 diff = (expectedvec - actual)**2
 error = diff.sum()
 
-outdiff = outfn.update(error)
-hiddiff = hiddenfn.update(error)
+outdiff = outfn.update(error,train_update_const)
+hiddiff = hiddenfn.update(error,train_update_const)
 
 plotutil = plot_utility.PlotHolder("basic_test")
 hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
@@ -100,7 +75,7 @@ train_str = nice_string(get_str("test_text.txt"))
 instr = in_vec(train_str)
 exp_str = expect_vec(train_str)
 #print(train_str)
-for _ in range(10):
+for _ in range(300):
     for inp, ex in zip(instr,exp_str):
         pass
         output = train(inp,ex)
