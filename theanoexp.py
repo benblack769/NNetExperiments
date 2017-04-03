@@ -46,6 +46,8 @@ train = theano.function(
         updates=hiddiff+outdiff,
     )
 
+
+
 def nice_string(s):
     return "".join(c.lower() for c in s if c.lower() in string.ascii_lowercase)
 def char_to_vec(c):
@@ -75,7 +77,7 @@ train_str = nice_string(get_str("test_text.txt"))
 instr = in_vec(train_str)
 exp_str = expect_vec(train_str)
 #print(train_str)
-for _ in range(300):
+for _ in range(30):
     for inp, ex in zip(instr,exp_str):
         pass
         output = train(inp,ex)

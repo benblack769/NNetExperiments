@@ -11,10 +11,11 @@ class WeightBias:
         self.W = theano.shared(rand_weight,name=self.weight_name())
 
         bias_init = np.zeros(out_len)
-        self.b = theano.shared(bias_init,name=self.bias_name())
+        self.b = theano.shared(bias_init,name=self.bias_name())#allows nice addition
 
     def calc_output(self,in_vec):
-        return self.b + T.dot(self.W,in_vec)
+        prod = T.dot(self.W,in_vec)
+        return T.add(prod,self.b[:,None])
 
     def bias_name(self):
         return self.name+"b"

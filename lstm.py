@@ -3,9 +3,12 @@ import theano
 import numpy as np
 import theano.tensor as T
 import plot_utility
+import itertools
 from WeightBias import WeightBias
 
 #theano.config.optimizer="fast_compile"
+
+SEQUENCE_LEN = 10
 
 IN_LEN = 26
 OUT_LEN = 26
@@ -15,9 +18,10 @@ HIDDEN_LEN = OUT_LEN + IN_LEN
 
 TRAIN_UPDATE_CONST = 0.3
 
-input_vec = T.vector('invec')
-cell_state = theano.shared(np.zeros(CELL_STATE_LEN),name='cell')
-output_vec = theano.shared(np.zeros(OUT_LEN),name='output')
+inputs = T.matrix("inputs")
+#cell_state_vec = T.vector('cell_state') #theano.shared(np.zeros(CELL_STATE_LEN),name='cell_state')
+#output_vec = T.vector('output') # theano.shared(np.zeros(OUT_LEN),name='output')
+expected_vec = T.vector('expected')
 
 cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
 add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN)
@@ -27,47 +31,62 @@ to_new_output_fn = WeightBias("to_new_hidden", HIDDEN_LEN, CELL_STATE_LEN)
 def sigma(x):
     return 1.0 / (1.0+T.exp(-x))
 
-hidden_input = T.concatenate(output_vec,input_vec)
+def calc_outputs(in_vec,cell_state,out_vec):
+    hidden_input = T.concatenate([out_vec,in_vec])
 
-#first stage, forget some info
-cell_mul_val = sigma(cell_forget_fn.calc_output(hidden_input))
-new_cell_state = cell_state * cell_mul_val
+    #first stage, forget some info
+    cell_mul_val = sigma(cell_forget_fn.calc_output(hidden_input))
+    forgot_cell_state = cell_state * cell_mul_val
 
-#second stage, add some new info
-add_barrier = sigma(add_barrier_fn.calc_output(hidden_input))
-this_add_val = T.tanh(add_cell_fn.calc_output(hidden_input))
-new_cell_state = new_cell_state + this_add_val * add_barrier
+    #second stage, add some new info
+    add_barrier = sigma(add_barrier_fn.calc_output(hidden_input))
+    this_add_val = T.tanh(add_cell_fn.calc_output(hidden_input))
+    added_cell_state = forgot_cell_state + this_add_val * add_barrier
 
-#third stage, get output
-out_all = sigma(to_new_output_fn.calc_output(hidden_input))
-new_output = out_all * T.tanh(cell_state)
+    #third stage, get output
+    out_all = sigma(to_new_output_fn.calc_output(hidden_input))
+    new_output = out_all * T.tanh(added_cell_state)
 
+    return added_cell_state,new_output
 
 def calc_error(expected, actual):
     diff = (expected - actual)**2
     error = diff.sum()
     return error
 
-# error calculation
-output_error_vec = T.vector('output_error')
-cell_error_vec = T.vector('cell_error')
+no_trucation_constant = -1
 
-def get_update(wb_fn):
-    return (
-        wb_fn.update(output_error_vec,train_update_const)+
-        wb_fn.update(cell_error_vec,train_update_const)
-    )
+[out_cell_state,new_out],update = theano.scan(calc_outputs,
+                            sequences=[inputs],
+                            outputs_info=[
+                                dict(initial=T.zeros(CELL_STATE_LEN),taps=[-1]),
+                                dict(initial=T.zeros(OUT_LEN),taps=[-1])],
+                            truncate_gradient=no_trucation_constant,
+                            n_steps=SEQUENCE_LEN)
 
-updates = (
-    get_update(cell_forget_fn) +
-    get_update(add_barrier_fn) +
-    get_update(add_cell_fn) +
-    get_update(to_new_output_fn)
+true_out = new_out[-1]
+
+error = calc_error(true_out,expected_vec)
+
+weight_biases = [
+    cell_forget_fn,
+    add_barrier_fn,
+    add_cell_fn,
+    to_new_output_fn,
+]
+updates = itertools.chain(wb.update() for wb in weight_biases)
+
+predict_fn = theano.function(
+    [inputs],
+    [true_out]
 )
 
-hiddiff = hiddenfn.update(error,train_update_const)
-
-plotutil = plot_utility.PlotHolder("basic_test")
+train_fn = theano.function(
+    [inputs,expected_vec],
+    updates=updates
+)
+'''
+plotutil = plot_utility.PlotHolder("lstm_test")
 hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
 outbias_plot = plotutil.add_plot("outbias",outfn.b)
 
@@ -122,3 +141,4 @@ outtxt = "".join(get_char(v[0]) for v in predtext)
 #print(predtext)
 print(outtxt)
 #print(outfn.W.get_value())
+'''

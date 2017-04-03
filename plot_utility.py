@@ -40,7 +40,8 @@ class PlotHolder:
         self.plots = plots if plots != None else []
 
         self.output_start = None
-        self.dir_name = "plots/"+dir_name
+        self.init_large_dir()
+        self.dir_name = os.path.join("plots/",plot_dir, dir_name)
         self.init_dir()
 
     def add_plot(self,name,data_source,skip_updates=0):
@@ -57,6 +58,9 @@ class PlotHolder:
     def update_plots(self,all_outputs):
         for i,plot in enumerate(self.plots):
             plot.set_update(all_outputs[i+self.output_start])
+
+    def init_large_dir(self):
+        os.makedirs(plot_dir, exist_ok=True)
 
     def init_dir(self):
         while os.path.exists(self.dir_name):
