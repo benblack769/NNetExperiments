@@ -21,7 +21,6 @@ class TimeData:
             vals = [float(val) for val in line.split()]
             datalist.append(np.array(vals[1:]))
             times.append(vals[0])
-
         self.data = np.transpose(np.vstack(datalist))
         self.times = np.array(times)
 
@@ -73,6 +72,7 @@ class TimeData:
         linelist.sort()
         new_data = []
         for l in linelist:
+            assert l >= 0 and l < self.data.shape[0], 'linelist contains indexes out of range'
             new_data.append(self.data[l])
         self.data = new_data
 

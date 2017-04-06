@@ -4,7 +4,8 @@ import numpy
 plot_dir = "plot_data"
 
 def data_to_bytes(time_frame,numpy_vec):
-    data = (str(val) for val in numpy_vec)
+    flat = numpy_vec.flatten()
+    data = (str(val) for val in flat)
     datastr = str(time_frame)+"\t"
     datastr += "\t".join(data)+"\n"
     databytes = bytes(datastr,encoding="utf8")

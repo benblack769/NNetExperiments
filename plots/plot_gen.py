@@ -1,7 +1,17 @@
 from plot_data import TimeData
 
+
+td = TimeData("plot_data/rmsprop_test000000000000000/hidbias.tsv")
+#td.filter_lines([x for x in range(2,50)])
+td.crop_window(0,10000)
+td.filter_lines([x for x in range(25,50)])
+td.show_plot()
+
+#LSTM bias updating
+'''
 td = TimeData("plot_data/train_test/cell_forget_bias.tsv")
 td.show_plot()
+'''
 
 # noisy cell state generation
 '''

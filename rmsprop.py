@@ -5,11 +5,9 @@ import theano.tensor as T
 import plot_utility
 from WeightBias import WeightBias
 
-theano.config.optimizer="fast_compile"
-
 inlen = 26
 outlen = 26
-hiddenlen = 200
+hiddenlen = 100
 batch_size = 32
 train_update_const = 0.3/batch_size
 
@@ -29,12 +27,31 @@ actual = outvec
 diff = (expectedvec - actual)**2
 error = diff.sum()
 
-outdiff = outfn.update(error,train_update_const)
-hiddiff = hiddenfn.update(error,train_update_const)
+all_wb = outfn.wb_list() + hiddenfn.wb_list()
+all_grad = T.grad(error,wrt=all_wb)
 
-plotutil = plot_utility.PlotHolder("batch_test")
-hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
-outbias_plot = plotutil.add_plot("outbias",outfn.b)
+def rms_prop_updates():
+    DECAY_RATE = 0.9
+    LEARNING_RATE = 0.1
+    STABILIZNG_VAL = 0.00001
+
+    gsqr = sum(T.sum(g*g) for g in all_grad)
+
+    grad_sqrd_mag = theano.shared(0.1,"grad_sqrd_mag")
+
+    grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (1-DECAY_RATE)*gsqr
+
+    wb_update_mag = LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
+    plotutil.add_plot("update_mag",grad_sqrd_mag_update)
+
+    wb_update = [(wb,wb - wb_update_mag * grad) for wb,grad in zip(all_wb,all_grad)]
+    return wb_update + [(grad_sqrd_mag,grad_sqrd_mag_update)]
+
+plotutil = plot_utility.PlotHolder("rmsprop_test")
+plotutil.add_plot("hidbias",hiddenfn.b)
+plotutil.add_plot("outbias",outfn.b)
+
+updates = rms_prop_updates()
 
 predict = theano.function(
         inputs=[inputvec],
@@ -44,7 +61,7 @@ predict = theano.function(
 train = theano.function(
         inputs=[inputvec,expectedvec],
         outputs=plotutil.append_plot_outputs([]),
-        updates=hiddiff+outdiff,
+        updates=updates
     )
 
 
@@ -89,7 +106,7 @@ train_str = nice_string(get_str("data/test_text.txt"))
 instr = matrixfy(in_vec(train_str),batch_size)
 exp_str = matrixfy(expect_vec(train_str),batch_size)
 #print(instr)
-for _ in range(200):
+for _ in range(300):
     for inp, ex in zip(instr,exp_str):
         pass
         output = train(inp,ex)

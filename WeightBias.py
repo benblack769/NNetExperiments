@@ -16,6 +16,9 @@ class WeightBias:
     def calc_output(self,in_vec):
         prod = T.dot(self.W,in_vec)
         return T.add(prod,self.b)
+    def calc_output_batched(self,in_mat):
+        prod = T.dot(self.W,in_mat)
+        return T.add(prod,self.b[:,None])
 
     def bias_name(self):
         return self.name+"b"
