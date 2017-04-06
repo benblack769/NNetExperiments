@@ -8,11 +8,13 @@ from WeightBias import WeightBias
 
 #theano.config.optimizer="fast_compile"
 
-SEQUENCE_LEN = 10
+SEQUENCE_LEN = 2
+
+BATCH_SIZE = 16
 
 IN_LEN = 26
 OUT_LEN = 26
-CELL_STATE_LEN = 100
+CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
 
@@ -54,8 +56,17 @@ def calc_error(expected, actual):
     error = diff.sum()
     return error
 
-no_trucation_constant = -1
+def my_scan(invecs):
+    prev_out = T.zeros(OUT_LEN)
+    prev_cell = T.zeros(CELL_STATE_LEN)
+    for x in range(SEQUENCE_LEN):
+        prev_cell,prev_out = calc_outputs(invecs[x],prev_cell,prev_out)
+        #prev_out = prev_out.dimshuffle((0,1))#.dimshuffle((1,))
+    return prev_cell,prev_out
 
+out_cell_state,new_out = my_scan(inputs)
+
+'''
 [out_cell_state,new_out],update = theano.scan(calc_outputs,
                             sequences=[inputs],
                             outputs_info=[
@@ -63,19 +74,20 @@ no_trucation_constant = -1
                                 dict(initial=T.zeros(OUT_LEN),taps=[-1])],
                             truncate_gradient=no_trucation_constant,
                             n_steps=SEQUENCE_LEN)
-
-true_out = new_out[-1]
+'''
+true_out = new_out
 
 error = calc_error(true_out,expected_vec)
 
-weight_biases = [
-    cell_forget_fn,
-    add_barrier_fn,
-    add_cell_fn,
-    to_new_output_fn,
-]
-updates = itertools.chain(wb.update() for wb in weight_biases)
-
+weight_biases = (
+    cell_forget_fn.wb_list() +
+    add_barrier_fn.wb_list() +
+    add_cell_fn.wb_list() +
+    to_new_output_fn.wb_list()
+)
+grads = T.grad(error,wrt=weight_biases)
+updates = [(sh_var,sh_var - TRAIN_UPDATE_CONST*grad) for sh_var,grad in zip(weight_biases,grads)]
+print(updates)
 predict_fn = theano.function(
     [inputs],
     [true_out]
@@ -85,7 +97,7 @@ train_fn = theano.function(
     [inputs,expected_vec],
     updates=updates
 )
-'''
+
 plotutil = plot_utility.PlotHolder("lstm_test")
 hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
 outbias_plot = plotutil.add_plot("outbias",outfn.b)
@@ -141,4 +153,3 @@ outtxt = "".join(get_char(v[0]) for v in predtext)
 #print(predtext)
 print(outtxt)
 #print(outfn.W.get_value())
-'''
