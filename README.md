@@ -95,9 +95,17 @@ As you can see, it does not seem to stabilize nicely. Instead...
 
 Batching
 
-Optimizers
+#### Optimizers (rmsprop)
 
-plot2 changes in biases with optimizer
+First, a quick overview of the history of ANN optimizers:
+
+Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. People's attempt to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, AdaGrad, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
+
+In order to see if this stabilized anything, I went ahead and ran it, capturing the updating biases as it updated. This chart is on the same sort of timescale as the one above, using ordinary SGD.
+
+![alt](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/rmprop_long_update.png "biases in output layer using rmsprop")
+
+I think you can see that it is converging even slower than with SGD. I spent significantly more time trying to pick good parameters, so it is not that. I think it is because the learning task it is working on is so simple, that all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it. 
 
 ### LSTM
 
@@ -107,4 +115,4 @@ I will start out with a rather simple learning task: recognize most likely next 
 
 For example, if it gets input "I am goin", it should output "g", as it is pretty obvious that the statement is: "I am going".
 
-Amazingly, my first successful run produced somewhat OK results, with the letters a,e, and i featuring prominently, and other letters appearing occasionally. This is still very bad though, even for a small network like mine. 
+Amazingly, my first successful run produced somewhat OK results, with the letters a,e, and i featuring prominently, and other letters appearing occasionally. This is still very bad though, even for a small network like mine.
