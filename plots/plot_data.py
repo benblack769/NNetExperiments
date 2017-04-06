@@ -84,10 +84,3 @@ class TimeData:
         for d in self.data:
             plt.plot(self.times,d)
         plt.show()
-
-td = TimeData("plot_data/batch_test0/hidbias.tsv")
-td.filter_lines([x for x in range(10,25)])
-#td.crop_window(20000,10e50)
-#td.average_n_steps(1)
-#td.get_diff()
-td.show_plot()

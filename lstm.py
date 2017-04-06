@@ -18,7 +18,7 @@ CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
 
-TRAIN_UPDATE_CONST = 0.3
+TRAIN_UPDATE_CONST = 0.1
 
 inputs = T.matrix("inputs")
 #cell_state_vec = T.vector('cell_state') #theano.shared(np.zeros(CELL_STATE_LEN),name='cell_state')
@@ -29,6 +29,11 @@ cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
 add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN)
 add_cell_fn = WeightBias("add_cell", HIDDEN_LEN, CELL_STATE_LEN)
 to_new_output_fn = WeightBias("to_new_hidden", HIDDEN_LEN, CELL_STATE_LEN)
+
+
+train_plot_util = plot_utility.PlotHolder("train_test")
+train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b)
+predict_plot_util = plot_utility.PlotHolder("predict_view")
 
 def sigma(x):
     return 1.0 / (1.0+T.exp(-x))
@@ -62,6 +67,7 @@ def my_scan(invecs):
     for x in range(SEQUENCE_LEN):
         prev_cell,prev_out = calc_outputs(invecs[x],prev_cell,prev_out)
         #prev_out = prev_out.dimshuffle((0,1))#.dimshuffle((1,))
+    predict_plot_util.add_plot("cell_state",prev_cell)
     return prev_cell,prev_out
 
 out_cell_state,new_out = my_scan(inputs)
@@ -90,17 +96,16 @@ updates = [(sh_var,sh_var - TRAIN_UPDATE_CONST*grad) for sh_var,grad in zip(weig
 
 predict_fn = theano.function(
     [inputs],
-    [true_out]
+    predict_plot_util.append_plot_outputs([true_out])
 )
 
 train_fn = theano.function(
     [inputs,expected_vec],
+    train_plot_util.append_plot_outputs([]),
     updates=updates
 )
 
-#plotutil = plot_utility.PlotHolder("lstm_test")
-#hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
-#outbias_plot = plotutil.add_plot("outbias",outfn.b)
+
 
 def nice_string(s):
     return "".join(c.lower() for c in s if c.lower() in string.ascii_lowercase)
@@ -121,23 +126,27 @@ def get_str(filename):
     with open(filename) as file:
         return file.read()
 
-train_str = nice_string(get_str("test_text.txt"))
+train_str = nice_string(get_str("data/test_text.txt"))
 instr = in_vec(train_str)
-for i in range(20):
+for i in range(40):
     for end in range(SEQUENCE_LEN,len(instr)-1):
         start = end - SEQUENCE_LEN
         inmat = np.vstack(instr[start:end])
         expected = instr[end+1]
         output = train_fn(inmat,expected)
-    print("train_epoc"+str(i))
+        train_plot_util.update_plots(output)
+    print("train_epoc"+str(i),flush=True)
 
 pred_text = []
 for end in range(SEQUENCE_LEN,len(instr)-1):
     start = end - SEQUENCE_LEN
     inmat = np.vstack(instr[start:end])
-    pred_text.append(predict_fn(inmat))
+    outputs = predict_fn(inmat)
+    predict_plot_util.update_plots(outputs)
+    pred_text.append(outputs[0])
 
-outtxt = "".join(get_char(v[0]) for v in pred_text)
+
+outtxt = "".join(get_char(v) for v in pred_text)
 #print(predtext)
 print(outtxt)
 #print(outfn.W.get_value())
