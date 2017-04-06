@@ -8,7 +8,7 @@ from WeightBias import WeightBias
 
 #theano.config.optimizer="fast_compile"
 
-SEQUENCE_LEN = 2
+SEQUENCE_LEN = 6
 
 BATCH_SIZE = 16
 
@@ -87,7 +87,7 @@ weight_biases = (
 )
 grads = T.grad(error,wrt=weight_biases)
 updates = [(sh_var,sh_var - TRAIN_UPDATE_CONST*grad) for sh_var,grad in zip(weight_biases,grads)]
-print(updates)
+
 predict_fn = theano.function(
     [inputs],
     [true_out]
@@ -98,20 +98,9 @@ train_fn = theano.function(
     updates=updates
 )
 
-plotutil = plot_utility.PlotHolder("lstm_test")
-hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
-outbias_plot = plotutil.add_plot("outbias",outfn.b)
-
-predict = theano.function(
-        inputs=[input_vec,],
-        outputs=[new_output]
-    )
-
-train = theano.function(
-        inputs=[inputvec,expectedvec],
-        outputs=plotutil.append_plot_outputs([]),
-        updates=hiddiff+outdiff,
-    )
+#plotutil = plot_utility.PlotHolder("lstm_test")
+#hidbias_plot = plotutil.add_plot("hidbias",hiddenfn.b)
+#outbias_plot = plotutil.add_plot("outbias",outfn.b)
 
 def nice_string(s):
     return "".join(c.lower() for c in s if c.lower() in string.ascii_lowercase)
@@ -120,14 +109,8 @@ def char_to_vec(c):
     vec = np.zeros(26)
     vec[pos] = 1.0
     return vec
-def shift_one(c):
-    idx = string.ascii_lowercase.index(c)
-    nexidx =(idx+1)%26
-    return string.ascii_lowercase[nexidx]
 def in_vec(s):
     return [char_to_vec(c) for c in s]
-def expect_vec(s):
-    return [char_to_vec(shift_one(c)) for c in s]
 def get_char(vec):
     ls = list(vec)
     idx = ls.index(max(ls))
@@ -140,16 +123,21 @@ def get_str(filename):
 
 train_str = nice_string(get_str("test_text.txt"))
 instr = in_vec(train_str)
-exp_str = expect_vec(train_str)
-#print(train_str)
-for _ in range(100):
-    for inp, ex in zip(instr,exp_str):
-        pass
-        output = train(inp,ex)
-        plotutil.update_plots(output)
+for i in range(20):
+    for end in range(SEQUENCE_LEN,len(instr)-1):
+        start = end - SEQUENCE_LEN
+        inmat = np.vstack(instr[start:end])
+        expected = instr[end+1]
+        output = train_fn(inmat,expected)
+    print("train_epoc"+str(i))
 
-predtext = [predict(c) for c in instr]
-outtxt = "".join(get_char(v[0]) for v in predtext)
+pred_text = []
+for end in range(SEQUENCE_LEN,len(instr)-1):
+    start = end - SEQUENCE_LEN
+    inmat = np.vstack(instr[start:end])
+    pred_text.append(predict_fn(inmat))
+
+outtxt = "".join(get_char(v[0]) for v in pred_text)
 #print(predtext)
 print(outtxt)
 #print(outfn.W.get_value())
