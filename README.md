@@ -33,6 +33,8 @@ First, what is a recurrent network? It tries to solve a common problem that huma
 
 A recurrent network broadly it looks like this:
 
+![long term dependencies image](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/RNN-longtermdependencies.png "Long term dependencies")
+
 The major parts are the input, a state which is a function of the previous inputs, and the output, which is a function of the previous state. For voice recognition, the output would then be compared to the expected output, which is usually computed by hand (by writing out the text that the person is saying). Then, as long as the function A is differentiable, we can use backpropagation with gradient descent. While I won't go too deep into gradient descent, I will mention what it looks like. We store the inputs and states for several time steps back. Then we attempt to find out which internal parameters in the function contributed to the output the most. We then change these parameters so that they make the function output what we expected it to. To help conceptualize this, look at the diagram above. Suppose h3 is purely a function of x0 and x1. Then we would want to change the parameters in the A function so that this occurs.
 
 So how do we construct such a function so that we can nicely change the parameters like that? The obvious construction follows directly from ordinary deep neural networks.
@@ -69,7 +71,7 @@ To summarize: in neural networks, data is the only thing being changed.
 
 I think this is a fundamental difference in software thought, which requires new debugging tools, new tests, new debugging thought processes, and maybe even new hardware. Instead of thinking about an instruction pointer going around, we need to think about data changing, its interactions with data around it, how it accumulates, increments, and compounds. We need visualizations which allows us to see how the data is changing, not which instruction the computer is following.
 
-In order to accomplish this, I made a tools that save values in the network to a file, and a tool which uses MatPlotlib to create a visualization of that data. More about this later.
+In order to accomplish this, I made a tools that save values in the network to a file (plot_utility.py), and a tool which uses MatPlotlib to create a visualization of that data (plot_data.py). More about this later.
 
 ## Actual Implementations and Some Results
 
@@ -77,9 +79,19 @@ In order to accomplish this, I made a tools that save values in the network to a
 
 To get back into practice with neural nets, and accustomize myself to the working of Theano, I made an extremely simple 3 layer neural net, and trained it on an extremely simple learning task. The task was to learn a Caesar cipher of 1, that is the letters A,B,C,...,Y,Z turns into B,C,D,...,Z,A. Even though this is a trivial learning task, it reveals some interesting facts about neural networks and gradient descent.
 
+The data set I was training on is an excerpt from Douglas Adam's *Hitchhiker's Guide to the Galaxy*. It is in `data/test_text.txt`. The code to run the learning scheme is in `theanoexp.py`. It encodes the letters with a 26 node input and output, which correspond to the 26 letters, and has a hidden layer size of 100.
+
 #### Random initialization bug
 
-Plot1--changes in biases after long period of time
+When I first wrote it up, I had the problem where it would always output the same random letter, no matter what training occurred. I eventually figured out that the random weights and biases I initialized the matrix with were much too large. Just an example of one of the ways ANNs depend on values to work, not control flow.
+
+#### Unstable Biases
+
+I used my tool to get the biases as they were training to see if they eventually stabilized. The following records a selection of the hidden layer biases 300 cycles through the text.
+
+![alt](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/selected_hidden_biases.png "biases in output layer")
+
+As you can see, it does not seem to stabilize nicely. Instead...
 
 Batching
 
@@ -95,4 +107,4 @@ I will start out with a rather simple learning task: recognize most likely next 
 
 For example, if it gets input "I am goin", it should output "g", as it is pretty obvious that the statement is: "I am going".
 
-Amazingly, my first successful run produced somewhat OK results, with most
+Amazingly, my first successful run produced somewhat OK results, with the letters a,e, and

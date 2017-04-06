@@ -5,7 +5,7 @@ import theano.tensor as T
 import plot_utility
 from WeightBias import WeightBias
 
-theano.config.optimizer="fast_compile"
+#theano.config.optimizer="fast_compile"
 
 inlen = 26
 outlen = 26
@@ -73,7 +73,7 @@ def get_str(filename):
     with open(filename) as file:
         return file.read()
 
-train_str = nice_string(get_str("test_text.txt"))
+train_str = nice_string(get_str("data/test_text.txt"))
 instr = in_vec(train_str)
 exp_str = expect_vec(train_str)
 #print(train_str)
