@@ -6,8 +6,6 @@ import plot_utility
 import itertools
 from WeightBias import WeightBias
 
-#theano.config.optimizer="fast_compile"
-
 SEQUENCE_LEN = 6
 
 BATCH_SIZE = 16
@@ -18,11 +16,9 @@ CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
 
-TRAIN_UPDATE_CONST = 0.1
+TRAIN_UPDATE_CONST = 2
 
 inputs = T.matrix("inputs")
-#cell_state_vec = T.vector('cell_state') #theano.shared(np.zeros(CELL_STATE_LEN),name='cell_state')
-#output_vec = T.vector('output') # theano.shared(np.zeros(OUT_LEN),name='output')
 expected_vec = T.vector('expected')
 
 cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
@@ -127,6 +123,7 @@ def get_str(filename):
         return file.read()
 
 train_str = nice_string(get_str("data/test_text.txt"))
+print(train_str)
 instr = in_vec(train_str)
 for i in range(40):
     for end in range(SEQUENCE_LEN,len(instr)-1):
