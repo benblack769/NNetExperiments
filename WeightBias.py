@@ -18,7 +18,7 @@ class WeightBias:
         return T.add(prod,self.b)
     def calc_output_batched(self,in_mat):
         prod = T.dot(self.W,in_mat)
-        return T.add(prod,self.b[:,None])
+        return T.add(self.b[:,None],prod)
 
     def bias_name(self):
         return self.name+"b"

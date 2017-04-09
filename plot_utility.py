@@ -1,7 +1,7 @@
 import os
 import numpy
 
-plot_dir = "plot_data"
+plot_dir = "plots/plot_data"
 
 def data_to_bytes(time_frame,numpy_vec):
     flat = numpy_vec.flatten()
@@ -42,7 +42,7 @@ class PlotHolder:
 
         self.output_start = None
         self.init_large_dir()
-        self.dir_name = os.path.join("plots/",plot_dir, dir_name)
+        self.dir_name = os.path.join(plot_dir, dir_name)
         self.init_dir()
 
     def add_plot(self,name,data_source,skip_updates=0):

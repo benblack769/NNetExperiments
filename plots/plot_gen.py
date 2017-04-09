@@ -1,5 +1,16 @@
 from plot_data import TimeData
 
+# asd
+td = TimeData("plot_data/train_test0/cell_forget_bias.tsv")
+td.show_plot()
+td = TimeData("plot_data/train_test0/error_mag.tsv")
+td.average_n_steps(100)
+td.show_plot()
+td = TimeData("plot_data/train_test0/update_mag.tsv")
+td.average_n_steps(100)
+td.show_plot()
+
+
 
 #LSTM bias updating
 '''
@@ -8,12 +19,12 @@ td.show_plot()
 '''
 
 # noisy cell state generation
-#'''
+'''
 td = TimeData("plot_data/predict_view/cell_state.tsv")
 td.crop_window(1,100)
 td.filter_lines([x for x in range(2,15)])
 td.show_plot()
-#'''
+'''
 
 # rmsprop bias plot
 '''

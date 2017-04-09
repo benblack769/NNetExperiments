@@ -5,7 +5,7 @@ import theano.tensor as T
 import plot_utility
 from WeightBias import WeightBias
 
-theano.config.optimizer="fast_compile"
+#theano.config.optimizer="fast_compile"
 
 inlen = 26
 outlen = 26
