@@ -11,7 +11,7 @@ from WeightBias import WeightBias
 SEQUENCE_LEN = 6
 
 BATCH_SIZE = 32
-EPOCS = 300
+EPOCS = 100
 
 IN_LEN = 26
 OUT_LEN = 26
@@ -53,16 +53,16 @@ def calc_outputs(in_vec,cell_state,out_vec):
     return added_cell_state,new_output
 
 def calc_error(expected, actual):
-    sqrtdiff = (expected - T.transpose(actual))
+    sqrtdiff = (expected - actual)
     diff = sqrtdiff * sqrtdiff
     error = diff.sum()
     return error
 
 def my_scan(invecs):
-    prev_out = T.zeros_like(invecs[0:BATCH_SIZE])
-    prev_cell = T.zeros_like(invecs[0:BATCH_SIZE])
+    prev_out = T.zeros((OUT_LEN,BATCH_SIZE))
+    prev_cell = T.zeros((OUT_LEN,BATCH_SIZE))
     for x in range(SEQUENCE_LEN):
-        prev_cell,prev_out = calc_outputs(invecs[x:x+BATCH_SIZE],prev_cell,prev_out)
+        prev_cell,prev_out = calc_outputs(invecs[:,x:x+BATCH_SIZE],prev_cell,prev_out)
         #theano.printing.debugprint(prev_out)
         #prev_out = prev_out.dimshuffle((1,0))#.dimshuffle((1,))
     predict_plot_util.add_plot("cell_state",prev_cell)
@@ -149,19 +149,18 @@ def get_str(filename):
     with open(filename) as file:
         return file.read()
 
-def to_mat(np_strs):
-    return np.transpose(np.vstack(np_strs))
-
 train_str = nice_string(get_str("data/wiki_text.txt"))
 print(train_str)
-instr = in_vec(train_str)
+instr = np.transpose(np.vstack(in_vec(train_str)))
+print(instr.shape)
 def output_trains(num_trains):
     for i in range(num_trains):
-        for mid in range(SEQUENCE_LEN,len(instr)-BATCH_SIZE):
+        for mid in range(SEQUENCE_LEN,len(train_str)-BATCH_SIZE,BATCH_SIZE):
             start = mid - SEQUENCE_LEN
             end = mid + BATCH_SIZE
-            inmat = to_mat(instr[start:end])
-            expected = to_mat(instr[mid:end])
+            inmat = instr[:,start:end]
+            expected = instr[:,mid:end]
+            yield inmat,expected
         print("train_epoc"+str(i),flush=True)
 
 def train():
