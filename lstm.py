@@ -4,24 +4,27 @@ import numpy as np
 import theano.tensor as T
 import plot_utility
 import itertools
+import gc
 from WeightBias import WeightBias
 
 #theano.config.optimizer="fast_compile"
+#theano.config.scan.allow_gc=True
 
 SEQUENCE_LEN = 6
 
 BATCH_SIZE = 32
-EPOCS = 100
+EPOCS = 50
 
 IN_LEN = 26
-OUT_LEN = 26
+OUT_LEN = 120
 CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
+FULL_OUT_LEN = 26
 
 TRAIN_UPDATE_CONST = np.float32(2.0)
 
-inputs = T.matrix("inputs",dtype="float32")
+inputs = T.tensor3("inputs",dtype="float32")
 expected_vec = T.matrix('expected',dtype="float32")
 
 cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
@@ -29,6 +32,7 @@ add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN)
 add_cell_fn = WeightBias("add_cell", HIDDEN_LEN, CELL_STATE_LEN)
 to_new_output_fn = WeightBias("to_new_hidden", HIDDEN_LEN, CELL_STATE_LEN)
 
+full_output_fn = WeightBias("full_output", CELL_STATE_LEN, FULL_OUT_LEN)
 
 train_plot_util = plot_utility.PlotHolder("train_test")
 train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b)
@@ -59,16 +63,19 @@ def calc_error(expected, actual):
     return error
 
 def my_scan(invecs):
-    prev_out = T.zeros((OUT_LEN,BATCH_SIZE))
-    prev_cell = T.zeros((OUT_LEN,BATCH_SIZE))
-    for x in range(SEQUENCE_LEN):
-        prev_cell,prev_out = calc_outputs(invecs[:,x:x+BATCH_SIZE],prev_cell,prev_out)
-        #theano.printing.debugprint(prev_out)
-        #prev_out = prev_out.dimshuffle((1,0))#.dimshuffle((1,))
-    predict_plot_util.add_plot("cell_state",prev_cell)
-    return prev_cell,prev_out
+    [all_cell,all_out],updates = theano.scan(
+        calc_outputs,
+        sequences=[invecs],
+        outputs_info=[
+            dict(initial=T.zeros((OUT_LEN,BATCH_SIZE)),taps=[-1]),
+            dict(initial=T.zeros((OUT_LEN,BATCH_SIZE)),taps=[-1])
+            ],
+        n_steps=SEQUENCE_LEN
+    )
+    return all_cell[-1],all_out[-1]
 
 out_cell_state,new_out = my_scan(inputs)
+predict_plot_util.add_plot("cell_state",out_cell_state)
 
 '''
 [out_cell_state,new_out],update = theano.scan(calc_outputs,
@@ -79,7 +86,7 @@ out_cell_state,new_out = my_scan(inputs)
                             truncate_gradient=no_trucation_constant,
                             n_steps=SEQUENCE_LEN)
 '''
-true_out = new_out
+true_out = T.tanh(full_output_fn.calc_output_batched(new_out))
 
 error = calc_error(true_out,expected_vec)
 train_plot_util.add_plot("error_mag",error)
@@ -88,13 +95,14 @@ weight_biases = (
     cell_forget_fn.wb_list() +
     add_barrier_fn.wb_list() +
     add_cell_fn.wb_list() +
-    to_new_output_fn.wb_list()
+    to_new_output_fn.wb_list() +
+    full_output_fn.wb_list()
 )
 all_grads = T.grad(error,wrt=weight_biases)
 
 def rms_prop_updates():
     DECAY_RATE = np.float32(0.9)
-    LEARNING_RATE = np.float32(0.3)
+    LEARNING_RATE = np.float32(0.1)
     STABILIZNG_VAL = np.float32(0.00001)
 
     gsqr = sum(T.sum(g*g) for g in all_grads)
@@ -158,10 +166,12 @@ def output_trains(num_trains):
         for mid in range(SEQUENCE_LEN,len(train_str)-BATCH_SIZE,BATCH_SIZE):
             start = mid - SEQUENCE_LEN
             end = mid + BATCH_SIZE
-            inmat = instr[:,start:end]
+            in3dtens = np.dstack([instr[:,mid+j:end+j] for j in range(-SEQUENCE_LEN+1,1)] )
+            in3dtens = np.rollaxis(in3dtens,-1)
             expected = instr[:,mid:end]
-            yield inmat,expected
+            yield in3dtens,expected
         print("train_epoc"+str(i),flush=True)
+        for i in range(5): gc.collect()
 
 def train():
     for inpt,expect in output_trains(EPOCS):
