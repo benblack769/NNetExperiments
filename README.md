@@ -117,3 +117,8 @@ I will start out with a rather simple learning task: recognize most likely next 
 For example, if it gets input "I am goin", it should output "g", as it is pretty obvious that the statement is: "I am going".
 
 Amazingly, my first successful run produced somewhat OK results, with the letters a,e, and i featuring prominently, and other letters appearing occasionally. This is still very bad though, even for a small network like mine.
+
+
+
+#### Huck fin
+https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License

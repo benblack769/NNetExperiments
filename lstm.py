@@ -6,6 +6,7 @@ import plot_utility
 import itertools
 import gc
 from WeightBias import WeightBias
+from shared_save import RememberSharedVals
 
 #theano.config.optimizer="fast_compile"
 #theano.config.scan.allow_gc=True
@@ -13,14 +14,15 @@ from WeightBias import WeightBias
 SEQUENCE_LEN = 6
 
 BATCH_SIZE = 32
-EPOCS = 50
+EPOCS = 2
 
-IN_LEN = 26
+GOOD_CHARS = string.ascii_lowercase+" ,.;'-\"\n"
+IN_LEN = len(GOOD_CHARS)
 OUT_LEN = 120
 CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
-FULL_OUT_LEN = 26
+FULL_OUT_LEN = len(GOOD_CHARS)
 
 TRAIN_UPDATE_CONST = np.float32(2.0)
 
@@ -37,6 +39,8 @@ full_output_fn = WeightBias("full_output", CELL_STATE_LEN, FULL_OUT_LEN)
 train_plot_util = plot_utility.PlotHolder("train_test")
 train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b)
 predict_plot_util = plot_utility.PlotHolder("predict_view")
+
+shared_value_saver = RememberSharedVals('lstm_wbs')
 
 def calc_outputs(in_vec,cell_state,out_vec):
     hidden_input = T.concatenate([out_vec,in_vec],axis=0)
@@ -98,16 +102,18 @@ weight_biases = (
     to_new_output_fn.wb_list() +
     full_output_fn.wb_list()
 )
+shared_value_saver.add_shared_vals(weight_biases)
 all_grads = T.grad(error,wrt=weight_biases)
 
 def rms_prop_updates():
     DECAY_RATE = np.float32(0.9)
-    LEARNING_RATE = np.float32(0.1)
+    LEARNING_RATE = np.float32(0.07)
     STABILIZNG_VAL = np.float32(0.00001)
 
     gsqr = sum(T.sum(g*g) for g in all_grads)
 
     grad_sqrd_mag = theano.shared(np.float32(0.1),"grad_sqrd_mag")
+    shared_value_saver.add_shared_val(grad_sqrd_mag)
 
     grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (np.float32(1)-DECAY_RATE)*gsqr
 
@@ -136,13 +142,17 @@ train_fn = theano.function(
     updates=updates
 )
 
-
-
-def nice_string(s):
-    return "".join(c.lower() for c in s if c.lower() in string.ascii_lowercase)
+def nice_string(raw_str):
+    s = (raw_str.replace("\n\n","\0")
+                .replace("\n"," ")
+                .replace("\0","\n")
+                .replace("”",'"')
+                .replace("“",'"')
+                .replace("’","'"))
+    return "".join(c.lower() for c in s if c.lower() in GOOD_CHARS)
 def char_to_vec(c):
-    pos = string.ascii_lowercase.index(c)
-    vec = np.zeros(26,dtype="float32")
+    pos = GOOD_CHARS.index(c)
+    vec = np.zeros(IN_LEN,dtype="float32")
     vec[pos] = 1.0
     return vec
 def in_vec(s):
@@ -152,9 +162,9 @@ def get_char(vec):
     idx = ls.index(max(ls))
     #print(max(ls))
     #print((ls))
-    return string.ascii_lowercase[idx]
+    return GOOD_CHARS[idx]
 def get_str(filename):
-    with open(filename) as file:
+    with open(filename,encoding="utf8") as file:
         return file.read()
 
 train_str = nice_string(get_str("data/wiki_text.txt"))
@@ -171,17 +181,22 @@ def output_trains(num_trains):
             expected = instr[:,mid:end]
             yield in3dtens,expected
         print("train_epoc"+str(i),flush=True)
-        for i in range(5): gc.collect()
+        #for i in range(5): gc.collect()
 
 def train():
     for inpt,expect in output_trains(EPOCS):
-        output = train_fn(inpt,expect)
+        output = to_numpys(train_fn(inpt,expect))
         train_plot_util.update_plots(output)
+        shared_value_saver.vals_updated()
 
+    shared_value_saver.force_update()
+
+def to_numpys(outlist):
+    return [np.asarray(o) for o in outlist]
 def predict():
     pred_text = []
     for inp,_ in output_trains(1):
-        outputs = predict_fn(inp)
+        outputs = to_numpys(predict_fn(inp))
         predict_plot_util.update_plots(outputs)
 
         pred_text.append(outputs[0])
