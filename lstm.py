@@ -5,7 +5,8 @@ import theano.tensor as T
 import plot_utility
 import itertools
 from WeightBias import WeightBias
-theano.config.optimizer="fast_compile"
+
+#theano.config.optimizer="fast_compile"
 
 SEQUENCE_LEN = 6
 
@@ -18,10 +19,10 @@ CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
 
-TRAIN_UPDATE_CONST = 2
+TRAIN_UPDATE_CONST = np.float32(2.0)
 
-inputs = T.tensor3("inputs")
-expected_vec = T.matrix('expected')
+inputs = T.tensor3("inputs",dtype="float32")
+expected_vec = T.matrix('expected',dtype="float32")
 
 cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
 add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN)
@@ -52,7 +53,8 @@ def calc_outputs(in_vec,cell_state,out_vec):
     return added_cell_state,new_output
 
 def calc_error(expected, actual):
-    diff = (expected - T.transpose(actual))**2
+    sqrtdiff = (expected - T.transpose(actual))
+    diff = sqrtdiff * sqrtdiff
     error = diff.sum()
     return error
 
@@ -91,15 +93,15 @@ weight_biases = (
 all_grads = T.grad(error,wrt=weight_biases)
 
 def rms_prop_updates():
-    DECAY_RATE = 0.9
-    LEARNING_RATE = 0.3
-    STABILIZNG_VAL = 0.00001
+    DECAY_RATE = np.float32(0.9)
+    LEARNING_RATE = np.float32(0.3)
+    STABILIZNG_VAL = np.float32(0.00001)
 
     gsqr = sum(T.sum(g*g) for g in all_grads)
 
-    grad_sqrd_mag = theano.shared(0.1,"grad_sqrd_mag")
+    grad_sqrd_mag = theano.shared(np.float32(0.1),"grad_sqrd_mag")
 
-    grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (1-DECAY_RATE)*gsqr
+    grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (np.float32(1)-DECAY_RATE)*gsqr
 
     wb_update_mag = LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
     train_plot_util.add_plot("update_mag",wb_update_mag)
@@ -132,7 +134,7 @@ def nice_string(s):
     return "".join(c.lower() for c in s if c.lower() in string.ascii_lowercase)
 def char_to_vec(c):
     pos = string.ascii_lowercase.index(c)
-    vec = np.zeros(26)
+    vec = np.zeros(26,dtype="float32")
     vec[pos] = 1.0
     return vec
 def in_vec(s):
