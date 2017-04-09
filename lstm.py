@@ -21,7 +21,7 @@ HIDDEN_LEN = OUT_LEN + IN_LEN
 
 TRAIN_UPDATE_CONST = np.float32(2.0)
 
-inputs = T.tensor3("inputs",dtype="float32")
+inputs = T.matrix("inputs",dtype="float32")
 expected_vec = T.matrix('expected',dtype="float32")
 
 cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
@@ -59,10 +59,10 @@ def calc_error(expected, actual):
     return error
 
 def my_scan(invecs):
-    prev_out = T.zeros_like(invecs[0])
-    prev_cell = T.zeros_like(invecs[0])
+    prev_out = T.zeros_like(invecs[0:BATCH_SIZE])
+    prev_cell = T.zeros_like(invecs[0:BATCH_SIZE])
     for x in range(SEQUENCE_LEN):
-        prev_cell,prev_out = calc_outputs(invecs[x],prev_cell,prev_out)
+        prev_cell,prev_out = calc_outputs(invecs[x:x+BATCH_SIZE],prev_cell,prev_out)
         #theano.printing.debugprint(prev_out)
         #prev_out = prev_out.dimshuffle((1,0))#.dimshuffle((1,))
     predict_plot_util.add_plot("cell_state",prev_cell)
@@ -149,43 +149,29 @@ def get_str(filename):
     with open(filename) as file:
         return file.read()
 
-train_str = nice_string(get_str("data/test_text.txt"))
+def to_mat(np_strs):
+    return np.transpose(np.vstack(np_strs))
+
+train_str = nice_string(get_str("data/wiki_text.txt"))
 print(train_str)
 instr = in_vec(train_str)
 def output_trains(num_trains):
     for i in range(num_trains):
-        for end in range(SEQUENCE_LEN,len(instr)-1):
-            start = end - SEQUENCE_LEN
-            inmat = np.vstack(instr[start:end])
-            expected = instr[end+1]
-            yield (inmat,expected)
+        for mid in range(SEQUENCE_LEN,len(instr)-BATCH_SIZE):
+            start = mid - SEQUENCE_LEN
+            end = mid + BATCH_SIZE
+            inmat = to_mat(instr[start:end])
+            expected = to_mat(instr[mid:end])
         print("train_epoc"+str(i),flush=True)
 
-def stack_mat_list(matlist):
-    t3d = np.dstack(matlist)
-    return t3d
-
-def get_train_batches(num_trains):
-    inps = []
-    exps = []
-    for inp,exp in output_trains(num_trains):
-        inps.append(inp)
-        exps.append(exp)
-        if len(inps) >= BATCH_SIZE:
-            yield stack_mat_list(inps),np.vstack(exps)
-            inps = []
-            exps = []
-    if len(inps) >= 1:
-        yield stack_mat_list(inps),np.vstack(exps)
-
 def train():
-    for inpt,expect in get_train_batches(EPOCS):
+    for inpt,expect in output_trains(EPOCS):
         output = train_fn(inpt,expect)
         train_plot_util.update_plots(output)
 
 def predict():
     pred_text = []
-    for inp,_ in get_train_batches(1):
+    for inp,_ in output_trains(1):
         outputs = predict_fn(inp)
         predict_plot_util.update_plots(outputs)
 
