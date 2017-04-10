@@ -5,42 +5,43 @@ import theano.tensor as T
 import plot_utility
 import itertools
 import gc
+import time
 from WeightBias import WeightBias
 from shared_save import RememberSharedVals
 
 #theano.config.optimizer="fast_compile"
 #theano.config.scan.allow_gc=True
 
-SEQUENCE_LEN = 6
+SEQUENCE_LEN = 8
 
-BATCH_SIZE = 32
-EPOCS = 2
+BATCH_SIZE = 200
+EPOCS = 50
 
 GOOD_CHARS = string.ascii_lowercase+" ,.;'-\"\n"
 IN_LEN = len(GOOD_CHARS)
-OUT_LEN = 120
+OUT_LEN = 600
 CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
 FULL_OUT_LEN = len(GOOD_CHARS)
 
-TRAIN_UPDATE_CONST = np.float32(2.0)
+TRAIN_UPDATE_CONST = np.float32(0.1)
 
 inputs = T.tensor3("inputs",dtype="float32")
 expected_vec = T.matrix('expected',dtype="float32")
 
-cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN)
-add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN)
-add_cell_fn = WeightBias("add_cell", HIDDEN_LEN, CELL_STATE_LEN)
-to_new_output_fn = WeightBias("to_new_hidden", HIDDEN_LEN, CELL_STATE_LEN)
+cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN,1.0)
+add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN,0.5)
+add_cell_fn = WeightBias("add_cell", HIDDEN_LEN, CELL_STATE_LEN,0.0)
+to_new_output_fn = WeightBias("to_new_hidden", HIDDEN_LEN, CELL_STATE_LEN,0.5)
 
-full_output_fn = WeightBias("full_output", CELL_STATE_LEN, FULL_OUT_LEN)
+full_output_fn = WeightBias("full_output", CELL_STATE_LEN, FULL_OUT_LEN,0.0)
 
 train_plot_util = plot_utility.PlotHolder("train_test")
 train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b)
 predict_plot_util = plot_utility.PlotHolder("predict_view")
 
-shared_value_saver = RememberSharedVals('lstm_wbs')
+shared_value_saver = RememberSharedVals('lstm_wbs_huck_fin5')
 
 def calc_outputs(in_vec,cell_state,out_vec):
     hidden_input = T.concatenate([out_vec,in_vec],axis=0)
@@ -107,12 +108,12 @@ all_grads = T.grad(error,wrt=weight_biases)
 
 def rms_prop_updates():
     DECAY_RATE = np.float32(0.9)
-    LEARNING_RATE = np.float32(0.07)
+    LEARNING_RATE = np.float32(0.2)
     STABILIZNG_VAL = np.float32(0.00001)
 
     gsqr = sum(T.sum(g*g) for g in all_grads)
 
-    grad_sqrd_mag = theano.shared(np.float32(0.1),"grad_sqrd_mag")
+    grad_sqrd_mag = theano.shared(np.float32(400),"grad_sqrd_mag")
     shared_value_saver.add_shared_val(grad_sqrd_mag)
 
     grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (np.float32(1)-DECAY_RATE)*gsqr
@@ -152,8 +153,8 @@ def nice_string(raw_str):
     return "".join(c.lower() for c in s if c.lower() in GOOD_CHARS)
 def char_to_vec(c):
     pos = GOOD_CHARS.index(c)
-    vec = np.zeros(IN_LEN,dtype="float32")
-    vec[pos] = 1.0
+    vec = -np.ones(IN_LEN,dtype="float32")*0.9
+    vec[pos] = 0.999
     return vec
 def in_vec(s):
     return [char_to_vec(c) for c in s]
@@ -167,27 +168,40 @@ def get_str(filename):
     with open(filename,encoding="utf8") as file:
         return file.read()
 
-train_str = nice_string(get_str("data/wiki_text.txt"))
+train_str = nice_string(get_str("data/huck_fin.txt"))
 print(train_str)
 instr = np.transpose(np.vstack(in_vec(train_str)))
 print(instr.shape)
 def output_trains(num_trains):
     for i in range(num_trains):
-        for mid in range(SEQUENCE_LEN,len(train_str)-BATCH_SIZE,BATCH_SIZE):
+        for mid in range(SEQUENCE_LEN,len(train_str)-BATCH_SIZE-1,BATCH_SIZE):
             start = mid - SEQUENCE_LEN
             end = mid + BATCH_SIZE
             in3dtens = np.dstack([instr[:,mid+j:end+j] for j in range(-SEQUENCE_LEN+1,1)] )
             in3dtens = np.rollaxis(in3dtens,-1)
-            expected = instr[:,mid:end]
+            expected = instr[:,mid+1:end+1]
             yield in3dtens,expected
         print("train_epoc"+str(i),flush=True)
         #for i in range(5): gc.collect()
 
 def train():
+    num_trains = 0
+    time_last = time.clock()
+    train_time = 0
     for inpt,expect in output_trains(EPOCS):
-        output = to_numpys(train_fn(inpt,expect))
+        start = time.clock()
+        blocks = train_fn(inpt,expect)
+        train_time += time.clock() - start
+        output = to_numpys(blocks)
         train_plot_util.update_plots(output)
         shared_value_saver.vals_updated()
+        if num_trains%50==0:
+            now = time.clock()
+            print("train update took {}".format(now-time_last),flush=True)
+            print("train time was {}".format(train_time))
+            time_last = now
+            train_time = 0
+        num_trains += 1
 
     shared_value_saver.force_update()
 

@@ -28,7 +28,6 @@ def delete_shared(path):
     if os.path.exists(path):
         shutil.rmtree(path)
 
-
 class RememberSharedVals:
     def __init__(self,holder_name,update_freq=10.0):
         self.name = holder_name
