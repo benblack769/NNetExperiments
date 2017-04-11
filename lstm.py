@@ -6,7 +6,7 @@ import plot_utility
 import itertools
 import gc
 import time
-from WeightBias import WeightBias
+from WeightBias import WeightBias,NP_WeightBias
 from shared_save import RememberSharedVals
 
 #theano.config.optimizer="fast_compile"
@@ -14,7 +14,7 @@ from shared_save import RememberSharedVals
 
 SEQUENCE_LEN = 8
 
-BATCH_SIZE = 200
+BATCH_SIZE = 128
 EPOCS = 50
 
 GOOD_CHARS = string.ascii_lowercase+" ,.;'-\"\n"
@@ -29,6 +29,7 @@ TRAIN_UPDATE_CONST = np.float32(0.1)
 
 inputs = T.tensor3("inputs",dtype="float32")
 expected_vec = T.matrix('expected',dtype="float32")
+stateful_input_vec = T.vector('stateful_input')
 
 cell_forget_fn = WeightBias("cell_forget", HIDDEN_LEN, CELL_STATE_LEN,1.0)
 add_barrier_fn = WeightBias("add_barrier", HIDDEN_LEN, CELL_STATE_LEN,0.5)
@@ -38,10 +39,18 @@ to_new_output_fn = WeightBias("to_new_hidden", HIDDEN_LEN, CELL_STATE_LEN,0.5)
 full_output_fn = WeightBias("full_output", CELL_STATE_LEN, FULL_OUT_LEN,0.0)
 
 train_plot_util = plot_utility.PlotHolder("train_test")
-train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b)
+train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b,1000)
 predict_plot_util = plot_utility.PlotHolder("predict_view")
 
 shared_value_saver = RememberSharedVals('lstm_wbs_huck_fin5')
+
+weight_biases = (
+    cell_forget_fn.wb_list() +
+    add_barrier_fn.wb_list() +
+    add_cell_fn.wb_list() +
+    to_new_output_fn.wb_list() +
+    full_output_fn.wb_list()
+)
 
 def calc_outputs(in_vec,cell_state,out_vec):
     hidden_input = T.concatenate([out_vec,in_vec],axis=0)
@@ -79,69 +88,87 @@ def my_scan(invecs):
     )
     return all_cell[-1],all_out[-1]
 
-out_cell_state,new_out = my_scan(inputs)
-predict_plot_util.add_plot("cell_state",out_cell_state)
+def get_batched_train_pred():
+    out_cell_state,new_out = my_scan(inputs)
+    predict_plot_util.add_plot("cell_state",out_cell_state,1000)
 
-'''
-[out_cell_state,new_out],update = theano.scan(calc_outputs,
-                            sequences=[inputs],
-                            outputs_info=[
-                                dict(initial=T.zeros(CELL_STATE_LEN),taps=[-1]),
-                                dict(initial=T.zeros(OUT_LEN),taps=[-1])],
-                            truncate_gradient=no_trucation_constant,
-                            n_steps=SEQUENCE_LEN)
-'''
-true_out = T.tanh(full_output_fn.calc_output_batched(new_out))
+    true_out = T.tanh(full_output_fn.calc_output_batched(new_out))
 
-error = calc_error(true_out,expected_vec)
-train_plot_util.add_plot("error_mag",error)
+    error = calc_error(true_out,expected_vec)
+    train_plot_util.add_plot("error_mag",error)
 
-weight_biases = (
-    cell_forget_fn.wb_list() +
-    add_barrier_fn.wb_list() +
-    add_cell_fn.wb_list() +
-    to_new_output_fn.wb_list() +
-    full_output_fn.wb_list()
-)
-shared_value_saver.add_shared_vals(weight_biases)
-all_grads = T.grad(error,wrt=weight_biases)
+    shared_value_saver.add_shared_vals(weight_biases)
+    all_grads = T.grad(error,wrt=weight_biases)
 
-def rms_prop_updates():
-    DECAY_RATE = np.float32(0.9)
-    LEARNING_RATE = np.float32(0.2)
-    STABILIZNG_VAL = np.float32(0.00001)
+    def rms_prop_updates():
+        DECAY_RATE = np.float32(0.9)
+        LEARNING_RATE = np.float32(0.1)
+        STABILIZNG_VAL = np.float32(0.00001)
 
-    gsqr = sum(T.sum(g*g) for g in all_grads)
+        gsqr = sum(T.sum(g*g) for g in all_grads)
 
-    grad_sqrd_mag = theano.shared(np.float32(400),"grad_sqrd_mag")
-    shared_value_saver.add_shared_val(grad_sqrd_mag)
+        grad_sqrd_mag = theano.shared(np.float32(400),"grad_sqrd_mag")
+        shared_value_saver.add_shared_val(grad_sqrd_mag)
 
-    grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (np.float32(1)-DECAY_RATE)*gsqr
+        grad_sqrd_mag_update = DECAY_RATE * grad_sqrd_mag + (np.float32(1)-DECAY_RATE)*gsqr
 
-    wb_update_mag = LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
-    train_plot_util.add_plot("update_mag",wb_update_mag)
+        wb_update_mag = LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
+        train_plot_util.add_plot("update_mag",wb_update_mag)
 
-    wb_update = [(wb,wb - wb_update_mag * grad) for wb,grad in zip(weight_biases,all_grads)]
-    return wb_update + [(grad_sqrd_mag,grad_sqrd_mag_update)]
+        wb_update = [(wb,wb - wb_update_mag * grad) for wb,grad in zip(weight_biases,all_grads)]
+        return wb_update + [(grad_sqrd_mag,grad_sqrd_mag_update)]
 
-updates = rms_prop_updates()
+    updates = rms_prop_updates()
+
+    # Normal SGD
+    #grads = T.grad(error,wrt=weight_biases)
+    #updates = [(sh_var,sh_var - TRAIN_UPDATE_CONST*grad) for sh_var,grad in zip(weight_biases,grads)]
 
 
-# Normal SGD
-#grads = T.grad(error,wrt=weight_biases)
-#updates = [(sh_var,sh_var - TRAIN_UPDATE_CONST*grad) for sh_var,grad in zip(weight_biases,grads)]
+    predict_fn = theano.function(
+        [inputs],
+        predict_plot_util.append_plot_outputs([true_out])
+    )
 
+    train_fn = theano.function(
+        [inputs,expected_vec],
+        train_plot_util.append_plot_outputs([]),
+        updates=updates
+    )
+    return predict_fn, train_fn
 
-predict_fn = theano.function(
-    [inputs],
-    predict_plot_util.append_plot_outputs([true_out])
-)
+def np_sigmoid(vec):
+    return 1.0/(1.0+np.exp(-vec))
 
-train_fn = theano.function(
-    [inputs,expected_vec],
-    train_plot_util.append_plot_outputs([]),
-    updates=updates
-)
+def np_calc_output(inp_vec,cell_state,output_vec,np_cell_forget,np_add_barrier,np_add_cell,np_new_output):
+    hidden_input = np.concatenate([output_vec,inp_vec],axis=0)
+
+    #first stage, forget some info
+    cell_mul_val = np_sigmoid(cell_forget_fn.calc_output_batched(hidden_input))
+    forgot_cell_state = cell_state * cell_mul_val
+
+    #second stage, add some new info
+    add_barrier = np_sigmoid(add_barrier_fn.calc_output_batched(hidden_input))
+    this_add_val = T.tanh(add_cell_fn.calc_output_batched(hidden_input))
+    added_cell_state = forgot_cell_state + this_add_val * add_barrier
+
+    #third stage, get output
+    out_all = np_sigmoid(to_new_output_fn.calc_output_batched(hidden_input))
+    new_output = out_all * T.tanh(added_cell_state)
+    return added_cell_state,new_output
+
+def stateful_predict(input_list):
+    cell_state = np.zeros(CELL_STATE_LEN)
+    output_vec = np.zeros(OUT_LEN)
+    np_cell_forget = NP_WeightBias(cell_forget_fn)
+    np_add_barrier = NP_WeightBias(add_barrier_fn)
+    np_add_cell = NP_WeightBias(add_cell_fn)
+    np_new_output = NP_WeightBias(to_new_output_fn)
+    all_cell_states = []
+    for inp_vec in input_list:
+        cell_state,output_vec = np_calc_output(inp_vec,cell_state,output_vec,np_cell_forget,np_add_barrier,np_add_cell,np_new_output)
+        all_cell_states.append(cell_state)
+    return all_cell_states
 
 def nice_string(raw_str):
     s = (raw_str.replace("\n\n","\0")
@@ -168,9 +195,15 @@ def get_str(filename):
     with open(filename,encoding="utf8") as file:
         return file.read()
 
-train_str = nice_string(get_str("data/huck_fin.txt"))
+predict_fn,train_fn = get_batched_train_pred()
+
+train_str = nice_string(get_str("data/huck_fin.txt"))[:10000]
+in_vec_list = in_vec(train_str)
+
+
+exit(0)
 print(train_str)
-instr = np.transpose(np.vstack(in_vec(train_str)))
+instr = np.transpose(np.vstack(in_vec_list))
 print(instr.shape)
 def output_trains(num_trains):
     for i in range(num_trains):
@@ -220,5 +253,5 @@ def predict():
     outtxt = "".join(get_char(v) for v in text)
     return outtxt
 
-train()
+#train()
 print(predict())

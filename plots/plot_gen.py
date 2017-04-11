@@ -3,11 +3,11 @@ from plot_data import TimeData
 # asd
 #td = TimeData("plot_data/train_test/cell_forget_bias.tsv")
 #td.show_plot()
-td = TimeData("plot_data/train_test/error_mag.tsv")
+td = TimeData("plot_data/train_test000000000/error_mag.tsv")
 td.average_n_steps(100)
 #td.crop_window(0,1000000)
 td.show_plot()
-td = TimeData("plot_data/train_test/update_mag.tsv")
+td = TimeData("plot_data/train_test000000000/update_mag.tsv")
 td.average_n_steps(100)
 td.show_plot()
 #'''

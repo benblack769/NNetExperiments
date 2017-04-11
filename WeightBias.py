@@ -31,3 +31,11 @@ class WeightBias:
 
         c = train_update_const
         return [(self.W,self.W-Wg*c),(self.b,self.b-bg*c)]
+
+class NP_WeightBias:
+    def __init__(self,theano_weight_bias):
+        self.W = theano_weight_bias.W.get_value()
+        self.b = theano_weight_bias.b.get_value()
+    def calc_output(self,invec):
+        return np.dot(self.W,invec) + self.b
+    calc_output_batched = calc_output
