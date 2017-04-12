@@ -6,8 +6,9 @@ import plot_utility
 import itertools
 import gc
 import time
-from WeightBias import WeightBias,NP_WeightBias
+from WeightBias import WeightBias
 from shared_save import RememberSharedVals
+import string_processing
 
 #theano.config.optimizer="fast_compile"
 #theano.config.scan.allow_gc=True
@@ -17,13 +18,12 @@ SEQUENCE_LEN = 8
 BATCH_SIZE = 128
 EPOCS = 50
 
-GOOD_CHARS = string.ascii_lowercase+" ,.;'-\"\n"
-IN_LEN = len(GOOD_CHARS)
+IN_LEN = string_processing.CHARS_LEN
 OUT_LEN = 600
 CELL_STATE_LEN = OUT_LEN
 HIDDEN_LEN = OUT_LEN + IN_LEN
 
-FULL_OUT_LEN = len(GOOD_CHARS)
+FULL_OUT_LEN =string_processing.CHARS_LEN
 
 TRAIN_UPDATE_CONST = np.float32(0.1)
 
@@ -137,71 +137,13 @@ def get_batched_train_pred():
     )
     return predict_fn, train_fn
 
-def np_sigmoid(vec):
-    return 1.0/(1.0+np.exp(-vec))
-
-def np_calc_output(inp_vec,cell_state,output_vec,np_cell_forget,np_add_barrier,np_add_cell,np_new_output):
-    hidden_input = np.concatenate([output_vec,inp_vec],axis=0)
-
-    #first stage, forget some info
-    cell_mul_val = np_sigmoid(cell_forget_fn.calc_output_batched(hidden_input))
-    forgot_cell_state = cell_state * cell_mul_val
-
-    #second stage, add some new info
-    add_barrier = np_sigmoid(add_barrier_fn.calc_output_batched(hidden_input))
-    this_add_val = T.tanh(add_cell_fn.calc_output_batched(hidden_input))
-    added_cell_state = forgot_cell_state + this_add_val * add_barrier
-
-    #third stage, get output
-    out_all = np_sigmoid(to_new_output_fn.calc_output_batched(hidden_input))
-    new_output = out_all * T.tanh(added_cell_state)
-    return added_cell_state,new_output
-
-def stateful_predict(input_list):
-    cell_state = np.zeros(CELL_STATE_LEN)
-    output_vec = np.zeros(OUT_LEN)
-    np_cell_forget = NP_WeightBias(cell_forget_fn)
-    np_add_barrier = NP_WeightBias(add_barrier_fn)
-    np_add_cell = NP_WeightBias(add_cell_fn)
-    np_new_output = NP_WeightBias(to_new_output_fn)
-    all_cell_states = []
-    for inp_vec in input_list:
-        cell_state,output_vec = np_calc_output(inp_vec,cell_state,output_vec,np_cell_forget,np_add_barrier,np_add_cell,np_new_output)
-        all_cell_states.append(cell_state)
-    return all_cell_states
-
-def nice_string(raw_str):
-    s = (raw_str.replace("\n\n","\0")
-                .replace("\n"," ")
-                .replace("\0","\n")
-                .replace("”",'"')
-                .replace("“",'"')
-                .replace("’","'"))
-    return "".join(c.lower() for c in s if c.lower() in GOOD_CHARS)
-def char_to_vec(c):
-    pos = GOOD_CHARS.index(c)
-    vec = -np.ones(IN_LEN,dtype="float32")*0.9
-    vec[pos] = 0.999
-    return vec
-def in_vec(s):
-    return [char_to_vec(c) for c in s]
-def get_char(vec):
-    ls = list(vec)
-    idx = ls.index(max(ls))
-    #print(max(ls))
-    #print((ls))
-    return GOOD_CHARS[idx]
-def get_str(filename):
-    with open(filename,encoding="utf8") as file:
-        return file.read()
-
+'''
 predict_fn,train_fn = get_batched_train_pred()
 
-train_str = nice_string(get_str("data/huck_fin.txt"))[:10000]
-in_vec_list = in_vec(train_str)
+train_str = string_processing.get_str("data/huck_fin.txt")
+in_vec_list = string_processing.in_vec(train_str)
 
 
-exit(0)
 print(train_str)
 instr = np.transpose(np.vstack(in_vec_list))
 print(instr.shape)
@@ -240,6 +182,7 @@ def train():
 
 def to_numpys(outlist):
     return [np.asarray(o) for o in outlist]
+
 def predict():
     pred_text = []
     for inp,_ in output_trains(1):
@@ -250,8 +193,10 @@ def predict():
 
     text = [let for t in pred_text for let in np.transpose(t) ]
 
-    outtxt = "".join(get_char(v) for v in text)
+    outtxt = string_processing.out_list_to_str(text)
+
     return outtxt
 
-#train()
+train()
 print(predict())
+'''

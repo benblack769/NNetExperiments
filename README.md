@@ -10,6 +10,12 @@ If you have a good understanding of linear algebra and multidimensional calculus
 
 ### Inspiration and Goal
 
+CONECTIONIST MODELS ARE GOOD, BUT WE NEED TO KNOW HOW THESE THINGS ACTUALLY CONNECT, AND WHAT ABOUT THIER CONNECTION PRODUCES INTELEGENCE
+
+THE LEARNING TASK OF GUESSING THE NEXT LETTER IS NOT REALLY A RENFORCEMENT LEARNING TASK.
+
+THE COMPRESSION ALGORIHM IS USEFUL BECAUSE IF YOU CAN DO THAT< THEN YOU CAN DO ALL THESE OTHER THINGS TOO, like natral language processing. 
+
 To start out, I will cover LSTMs, as they are the base for what I am trying to do. There is an awesome description of them [here](http://colah.github.io/posts/2015-08-Understanding-LSTMs/), and I will be using diagrams from that source (which are generously published as public domain).
 
 One thing to know about LSTMs is that they are invented in 1999, and are still by far the best general purpose time series predictor known. This is not due to a lack of effort. There have been advances in
