@@ -19,6 +19,7 @@ def char_to_vec(c):
 def in_vec(s):
     return [char_to_vec(c) for c in s]
 def get_char(vec):
+    print(vec.shape)
     ls = list(vec)
     idx = ls.index(max(ls))
     return GOOD_CHARS[idx]

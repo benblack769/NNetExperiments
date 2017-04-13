@@ -13,13 +13,14 @@ class WeightBias:
         bias_init = np.zeros(out_len,dtype='float32') + mean_val
         self.b = theano.shared(bias_init,name=self.bias_name())#allows nice addition
 
-    def calc_output(self,in_vec):
-        prod = T.dot(self.W,in_vec)
-        return T.add(prod,self.b)
-    def calc_output_batched(self,in_mat):
-        prod = T.dot(self.W,in_mat)
-        return T.add(self.b[:,None],prod)
-
+    def calc_output(self,in_tens):
+        if in_tens.ndim == 1:
+            prod = T.dot(self.W,in_tens)
+            return T.add(prod,self.b)
+        elif in_tens.ndim == 2:
+            #batched inputs
+            prod = T.dot(self.W,in_tens)
+            return T.add(self.b[:,None],prod)
     def bias_name(self):
         return self.name+"b"
     def weight_name(self):
