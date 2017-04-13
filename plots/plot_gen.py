@@ -1,6 +1,6 @@
 from plot_data import TimeData
 
-fname = "plot_data/wide_huck_fin_train_test/"
+fname = "plot_data/wide_huck_fin_train_test0/"
 #'''
 # asd
 td = TimeData(fname+"cell_forget_bias.tsv")

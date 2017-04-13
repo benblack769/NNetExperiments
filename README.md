@@ -12,9 +12,9 @@ If you have a good understanding of linear algebra and multidimensional calculus
 
 CONECTIONIST MODELS ARE GOOD, BUT WE NEED TO KNOW HOW THESE THINGS ACTUALLY CONNECT, AND WHAT ABOUT THIER CONNECTION PRODUCES INTELEGENCE
 
-THE LEARNING TASK OF GUESSING THE NEXT LETTER IS NOT REALLY A RENFORCEMENT LEARNING TASK.
+THE LEARNING TASK OF GUESSING THE NEXT LETTER IS NOT REALLY A RENFORCEMENT LEARNING TASK. RATHER, i
 
-THE COMPRESSION ALGORIHM IS USEFUL BECAUSE IF YOU CAN DO THAT< THEN YOU CAN DO ALL THESE OTHER THINGS TOO, like natral language processing. 
+THE COMPRESSION ALGORIHM IS USEFUL BECAUSE IF YOU CAN DO THAT< THEN YOU CAN DO ALL THESE OTHER THINGS TOO, like natral language processing.
 
 To start out, I will cover LSTMs, as they are the base for what I am trying to do. There is an awesome description of them [here](http://colah.github.io/posts/2015-08-Understanding-LSTMs/), and I will be using diagrams from that source (which are generously published as public domain).
 
