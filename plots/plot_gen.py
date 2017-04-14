@@ -1,13 +1,13 @@
 from plot_data import TimeData
 
-fname = "plot_data/wide_huck_fin_train_test0/"
+fname = "plot_data/joined_data/"
 #'''
 # asd
 td = TimeData(fname+"cell_forget_bias.tsv")
 td.filter_lines([x for x in range(2,15)])
 td.show_plot()
 td = TimeData(fname+"error_mag.tsv")
-td.average_n_steps(100)
+#td.average_n_steps()
 #td.crop_window(0,1000000)
 td.show_plot()
 td = TimeData(fname+"update_mag.tsv")

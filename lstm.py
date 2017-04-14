@@ -90,7 +90,7 @@ class LSTM:
 
             def rms_prop_updates():
                 DECAY_RATE = np.float32(0.9)
-                LEARNING_RATE = np.float32(0.1)
+                LEARNING_RATE = np.float32(0.06)
                 STABILIZNG_VAL = np.float32(0.00001)
 
                 gsqr = sum(T.sum(g*g) for g in all_grads)

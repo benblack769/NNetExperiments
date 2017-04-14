@@ -17,7 +17,7 @@ HIDDEN_LEN = OUT_LEN + IN_LEN
 FULL_OUT_LEN = string_processing.CHARS_LEN
 
 
-train_str = string_processing.get_str("data/huck_fin.txt")
+train_str = string_processing.get_str("data/huck_fin.txt")[:10000]
 in_vec_list = string_processing.in_vec(train_str)
 
 my_lstm = lstm.LSTM("wide_huck_fin",SEQUENCE_LEN,IN_LEN,OUT_LEN,FULL_OUT_LEN,BATCH_SIZE)
@@ -82,6 +82,6 @@ def stateful_predict():
     return string_processing.out_list_to_str(outs)
 
 #print(stateful_predict())
-train()
+#train()
 #print(predict())
-print(stateful_predict(in_stack))
+print(stateful_predict())
