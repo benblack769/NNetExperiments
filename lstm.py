@@ -4,12 +4,16 @@ import theano.tensor as T
 import plot_utility
 from WeightBias import WeightBias
 from shared_save import RememberSharedVals
+import os
+import time
 
 #theano.config.optimizer="fast_compile"
 #theano.config.scan.allow_gc=True
 
 class LSTM:
     def __init__(self,save_name,SEQUENCE_LEN,IN_LEN,OUT_LEN,FULL_OUT_LEN,BATCH_SIZE):
+        self.SEQUENCE_LEN = SEQUENCE_LEN
+        self.BATCH_SIZE = BATCH_SIZE
         CELL_STATE_LEN = OUT_LEN
         HIDDEN_LEN = OUT_LEN + IN_LEN
 
@@ -130,10 +134,10 @@ class LSTM:
             cells,outs = calc_outputs(inputs,cells,outputs)
             full_out = T.tanh(full_output_fn.calc_output(outs))
             return cells,outs,full_out
-        def get_stateful_predict():
+        def stateful_fn(stateful_ins):
             [cells,outs,full_outs],updates = theano.scan(
                 calc_full_output,
-                sequences=[stateful_inputs],
+                sequences=[stateful_ins],
                 outputs_info=[
                     dict(initial=T.zeros((OUT_LEN)),taps=[-1]),
                     dict(initial=T.zeros((OUT_LEN)),taps=[-1]),
@@ -141,10 +145,67 @@ class LSTM:
                 ],
                 n_steps=stateful_inputs.shape[0]
             )
+            return cells,outs,full_outs
+        def get_stateful_predict():
             return theano.function(
                 [stateful_inputs],
-                [full_outs]
+                [stateful_fn(stateful_inputs)[2]]
+            )
+        def get_stateful_cells():
+            return theano.function(
+                [stateful_inputs],
+                [stateful_fn(stateful_inputs)[0]]
             )
 
         self.predict_fn,self.train_fn = get_batched_train_pred()
         self.state_predict = get_stateful_predict()
+        self.stateful_cells = get_stateful_cells()
+
+    def train(self,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
+        num_trains = 0
+        time_last = time.clock()
+        train_time = 0
+        for inpt,expect in self.output_trains(np.transpose(input_stack),np.transpose(exp_stack),NUM_EPOCS):
+            start = time.clock()
+            blocks = self.train_fn(inpt,expect)
+            train_time += time.clock() - start
+            output = to_numpys(blocks)
+            self.train_plot_util.update_plots(output)
+            self.shared_value_saver.vals_updated()
+            if num_trains%30==0 and show_timings:
+                now = time.clock()
+                print("train update took {}".format(now-time_last),flush=True)
+                print("train time was {}".format(train_time))
+                time_last = now
+                train_time = 0
+            num_trains += 1
+
+        self.shared_value_saver.force_update()
+    def plot_stateful_cells(self):
+        [cells] = my_lstm.stateful_cells(in_stack[:3000])
+        dir_name = "plots/plot_data/cell_time_plot"
+        os.makedirs(dir_name, exist_ok=True)
+        my_plot = plot_utility.Plot("cell_state_data",None,dir_name)
+        for state in cells:
+            my_plot.set_update(state)
+        my_plot.file.close()
+    def save_stateful_cells(self,filename,in_stack):
+        [cells] = self.stateful_cells(in_stack)
+        np.save(filename,cells)
+
+
+    def output_trains(self,input_ar,exp_ar,num_trains):
+        SEQUENCE_LEN = self.SEQUENCE_LEN
+        BATCH_SIZE = self.BATCH_SIZE
+        for i in range(num_trains):
+            for mid in range(SEQUENCE_LEN,input_ar.shape[1]-BATCH_SIZE-1,BATCH_SIZE):
+                start = mid - SEQUENCE_LEN
+                end = mid + BATCH_SIZE
+                in3dtens = np.dstack([input_ar[:,mid+j:end+j] for j in range(-SEQUENCE_LEN+1,1)] )
+                in3dtens = np.rollaxis(in3dtens,-1)
+                expected = exp_ar[:,mid+1:end+1]
+                yield in3dtens,expected
+            print("train_epoc"+str(i),flush=True)
+
+def to_numpys(outlist):
+    return [np.asarray(o) for o in outlist]

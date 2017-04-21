@@ -41,8 +41,9 @@ def join_folders_data(folder_list):
 
 def join_all():
     parent_dir = "plot_data/"
-    fold_name = "wide_huck_fin_train_test"
-    fold_names = [fold_name+"0"*i for i in range(6)]
+    fold_name = "wide_huck_fin_small_train_test"
+    fold_names = [fold_name+"0"*i for i in range(2)]
+    #fold_names = ["joined_data","import_data2"]
     fold_paths = [parent_dir+name for name in fold_names]
     join_folders_data(fold_paths)
 join_all()

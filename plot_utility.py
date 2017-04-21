@@ -26,12 +26,12 @@ class Plot:
     def get_data_graph(self):
         return self.data_source
 
-    def save_data(self,process_output):
+    def _save_data(self,process_output):
         self.file.write(data_to_bytes(self.time_frame,process_output))
 
     def set_update(self,process_output):
         if self.update_num % self.update_mod == 0:
-            self.save_data(process_output)
+            self._save_data(process_output)
         self.update_num += 1
         self.time_frame += 1
 

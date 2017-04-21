@@ -2,3 +2,5 @@ plot_data
 __pycache__
 saved_weights
 backup_weights
+saved_cells
+old_plot_data
