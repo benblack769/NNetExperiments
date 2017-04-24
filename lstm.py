@@ -30,7 +30,6 @@ class LSTM:
 
         self.train_plot_util = train_plot_util = plot_utility.PlotHolder(save_name+"_train_test")
         train_plot_util.add_plot("cell_forget_bias",cell_forget_fn.b,1000)
-        self.predict_plot_util = predict_plot_util = plot_utility.PlotHolder(save_name+"_predict_view")
 
         self.shared_value_saver = shared_value_saver = RememberSharedVals(save_name+'_lstm')
 
@@ -82,7 +81,6 @@ class LSTM:
             all_cell_state,all_out = my_scan(inputs)
             out_cell_state = all_cell_state[-1]
             new_out = all_out[-1]
-            predict_plot_util.add_plot("cell_state",out_cell_state,1000)
 
             true_out = T.tanh(full_output_fn.calc_output(new_out))
 
@@ -94,7 +92,7 @@ class LSTM:
 
             def rms_prop_updates():
                 DECAY_RATE = np.float32(0.9)
-                LEARNING_RATE = np.float32(0.06)
+                LEARNING_RATE = np.float32(0.01)
                 STABILIZNG_VAL = np.float32(0.00001)
 
                 gsqr = sum(T.sum(g*g) for g in all_grads)
@@ -117,18 +115,12 @@ class LSTM:
             #grads = T.grad(error,wrt=weight_biases)
             #updates = [(sh_var,sh_var - TRAIN_UPDATE_CONST*grad) for sh_var,grad in zip(weight_biases,grads)]
 
-
-            predict_fn = theano.function(
-                [inputs],
-                predict_plot_util.append_plot_outputs([true_out])
-            )
-
             train_fn = theano.function(
                 [inputs,expected_vec],
                 train_plot_util.append_plot_outputs([]),
                 updates=updates
             )
-            return predict_fn, train_fn
+            return train_fn
 
         def calc_full_output(inputs,cells,outputs):
             cells,outs = calc_outputs(inputs,cells,outputs)
@@ -157,7 +149,7 @@ class LSTM:
                 [stateful_fn(stateful_inputs)[0]]
             )
 
-        self.predict_fn,self.train_fn = get_batched_train_pred()
+        self.train_fn = get_batched_train_pred()
         self.state_predict = get_stateful_predict()
         self.stateful_cells = get_stateful_cells()
 
@@ -192,7 +184,9 @@ class LSTM:
     def save_stateful_cells(self,filename,in_stack):
         [cells] = self.stateful_cells(in_stack)
         np.save(filename,cells)
-
+    def save_stateful_predicted(self,filename,in_stack):
+        [cells] = self.state_predict(in_stack)
+        np.save(filename,cells)
 
     def output_trains(self,input_ar,exp_ar,num_trains):
         SEQUENCE_LEN = self.SEQUENCE_LEN
