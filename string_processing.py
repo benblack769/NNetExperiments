@@ -13,8 +13,8 @@ def nice_string(raw_str):
     return "".join(c.lower() for c in s if c.lower() in GOOD_CHARS)
 def char_to_vec(c):
     pos = GOOD_CHARS.index(c)
-    vec = np.ones(CHARS_LEN,dtype="float32")*(-0.9)
-    vec[pos] = 0.999
+    vec = np.zeros(CHARS_LEN,dtype="float32")
+    vec[pos] = 1.0
     return vec
 def in_vec(s):
     return [char_to_vec(c) for c in s]

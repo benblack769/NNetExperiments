@@ -62,9 +62,11 @@ class LSTM:
             return added_cell_state,new_output
 
         def calc_error(expected, actual):
-            sqrtdiff = (expected - actual)
-            diff = sqrtdiff * sqrtdiff
-            error = diff.sum()
+            probs_char = T.exp(actual) / T.sum(T.exp(actual)) # probabilities for next chars
+            error = -T.log(T.sum(probs_char*expected)) # softmax (cross-entropy loss#)
+            #sqrtdiff = (expected - actual)
+            #diff = sqrtdiff * sqrtdiff
+            #error = diff.sum()
             return error
 
         def my_scan(invecs):
@@ -152,8 +154,8 @@ class LSTM:
             )
             in_second_stack = np.load(lstm_framework.second_stage_output_filename)
             def get_np(idx):
-                arr = np.ones(string_processing.CHARS_LEN,dtype="float32")*(-0.9)
-                arr[idx] = 0.99
+                arr = np.zeros(string_processing.CHARS_LEN,dtype="float32")
+                arr[idx] = 1.0
                 return arr
             inidx = 4
             pout = np.zeros(OUT_LEN,dtype="float32")
@@ -188,7 +190,7 @@ class LSTM:
         self.train_fn = get_batched_train_pred()
         self.state_predict = get_stateful_predict()
         self.stateful_cells = get_stateful_cells()
-        self.stateful_gen = stateful_gen_fn()
+        #self.stateful_gen = stateful_gen_fn()
 
     def train(self,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
         num_trains = 0

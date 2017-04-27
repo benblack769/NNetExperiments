@@ -113,13 +113,15 @@ One nice property of this task is that if you know english, you should be able t
 I chose the text huckleberry fin, partly because its copyright is expired, and partly becasue it has a districtive writing stlye that we can see if the network identifies. I found a text copy on Project Gutenberg ([license](
 https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License))
 
-Initial results
+Initial results:
 
 ## Part 2: improving the network
 
-Unfortunately, it is difficult to reasonably test theoritical hypothesis of how algorithms work. We know they work, and we can state properties of them, but especially something as complicated as LSTMs, it is hard to track down any sort of causation or fundamental nature.
+Unfortunately, it is difficult to reasonably test theoritical hypothesis of how algorithms work. We know they work, and we can state properties of them, but especially something as complicated as LSTMs, it is hard to concretely track down any sort of causation or fundamental nature.
 
+However, there is some intuition associated with it. 
 
+One way I like doing is to alter the algorithm based on
 
 Because solving problems is easier than figuring out fundamental reasons for phenomena, I also want to explore how one might improve LSTMs. Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current tequniques like stacking LSTMS do this effectively.
 
