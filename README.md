@@ -10,9 +10,9 @@ If you have a good understanding of linear algebra and multidimensional calculus
 
 ### Inspiration and Goal
 
-STRUCTURE LEADS TO MORE SIGNIFICANT RESULTS THAN MATHMATICAL TRICKS. 
+UNDERSTANDING IS THE MOST IMPORTANT THING FOR THIS FINAL PROJECT
 
-CONECTIONIST MODELS ARE GOOD, BUT WE NEED TO KNOW HOW THESE THINGS ACTUALLY CONNECT, AND WHAT ABOUT THIER CONNECTION PRODUCES INTELEGENCE
+STRUCTURE LEADS TO MORE SIGNIFICANT RESULTS THAN MATHMATICAL TRICKS.
 
 THE LEARNING TASK OF GUESSING THE NEXT LETTER IS NOT REALLY A RENFORCEMENT LEARNING TASK. RATHER, i
 
@@ -27,16 +27,11 @@ One thing to know about LSTMs is that they are invented in 1999, and are still b
 Recurrent neural network design: Inspired by LSTMs, many people have created similar models which they though would solve some problems that LSTMs seem to have. None of the dozens of these are better, although some are marginally simpler. A meta-study done recently found that some models are marginally better.
 * Augmented networks: Many people think the next big thing in neural nets are ones given external memory to work with. These are often combined with LSTM networks on some of the most important pattern recognition problems. Google's new translation algorithm uses Attention networks to augment LSTMs.
 
-
-So what makes these so powerful? What made people think they could be improved with minor changes, and why were they wrong? What can't it do? If we ever want to make something even better, perhaps solving some of the problems with LSTMs, we need to be able to answer these questions. I think that LSTMs might encode something fundamental about how human intelligence works, although it may not be easy to see what that is.
-
-Because solving problems is easier than figuring out fundamental reasons for phenomena, I also want to explore how one might improve LSTMs. Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current tequniques like stacking LSTMS do this effectively.
-
-I think that this condensation over time is vital to creating human level intelligence. The very idea of attention is related to the conscious self, which can only focus on a small number of things at a time. So it relies on something lower level to condense the relevant information to something we can reasonably expect the machine to focus on.
+So what makes these so powerful? What made people think they could be improved with minor changes, and why were they wrong? What can't it do? If we ever want to make something even better, perhaps solving some of the problems with LSTMs, we need to be able to answer these questions. I think that LSTMs might encode something fundamental about intelligence, although it may not be easy to see what that is.
 
 ### Recurrent Networks and Time Sequence Learning
 
-First, what is a recurrent network? It tries to solve a common problem that humans solve, which is recognizing or generating sequences over time. So, a recurrent network looks at things like songs or text one time unit at a time. For example, RNNs are used for voice recognition, i.e. turning a sequence of sound waves into a sequence of letters.
+First, what is a recurrent network? It tries to solve a common problem that humans solve, which is recognizing sequences over time. So, a recurrent network looks at things like songs or text one time unit at a time. For example, RNNs are used for voice recognition, i.e. turning a sequence of sound waves into a sequence of letters.
 
 A recurrent network broadly it looks like this:
 
@@ -52,23 +47,8 @@ cite http://www-dsi.ing.unifi.it/~paolo/ps/tnn-94-gradient.pdf
 #### Description of LSTM networks
 #### Some broad intuition for why they might work better
 
-## Execution and Debugging of Neural Network Code
 
-### Theano
-
-Ok, now on to creating the code. I chose Theano, which I think is a really cool framework, independent of all the cool neural networks it allows you to build. Basically, it view the program as a graph. This allows the following:
-
-* Manipulate the program graph in order to make the code faster.
-    * memory reuse optimization
-* Hardware support
-    * Very easy and efficient GPU computation
-    * cluster computation, including muti-GPU computation
-* Allows for easy generation of code flow charts
-* Automatic and efficient computation of gradients, saving a lot of code
-
-Unfortunately, it comes with the downside that the code creation and execution are more separated than usual, making it somewhat harder to debug. Luckily, the Theano developers put a lot of work into making this problem better.
-
-### Thoughts on Debugging
+## Thoughts on Debugging Neural Networks
 
 Now, when people show you their neural network code, you go off happy, and try to run it, and it may work, but good luck making any changes. Neural nets are notoriously tricky. Out of all the code I have ever written, they have the greatest barriers to debugging. The code will run with several major errors, but it will not do what you want to do without everything being perfect. I this is an interesting contrast to standard AI techniques, which may be fiddly, but if you make one minor error in the code, then usually most things work fine, or it crashes immediately, or at the very least, it is easy to trace back what exactly went wrong. In general, it is easy to debug.
 
@@ -98,35 +78,74 @@ I used my tool to get the biases as they were training to see if they eventually
 
 ![alt](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/selected_hidden_biases.png "biases in output layer")
 
-As you can see, it does not seem to stabilize nicely. Instead...
+As you can see, it does not seem to stabilize perfectly, even over hundreds of iterations over the dataset. Instead it seems to slip every once in awhile into a new sort of state.
 
-Batching
-
-#### Optimizers (rmsprop)
+#### Optimizers (RMSprop)
 
 First, a quick overview of the history of ANN optimizers:
 
 http://sebastianruder.com/optimizing-gradient-descent/index.html#adadelta
 
-Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. People's attempt to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, AdaGrad, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
+Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. Attempts to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, AdaGrad, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
 
-In order to see if this stabilized anything, I went ahead and ran it, capturing the updating biases as it updated. This chart is on the same sort of timescale as the one above, using ordinary SGD.
+In order to see if this stabilized anything, I went ahead and ran it, capturing the updating biases as it updated. Ignore the x axis, this chart is on the same sort of timescale as the one above using ordinary SGD.
 
 ![alt](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/rmprop_long_update.png "biases in output layer using rmsprop")
 
-I think you can see that it is converging even slower than with SGD. I spent significantly more time trying to pick good parameters, so it is not that. I think it is because the learning task it is working on is so simple, that all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it.
+You can see that at the very beginning, it is changing much slower than SGD. When I reviewed the formulas, I realised that this is almost certainly the primary intention of RMSprop: to stablize outcomes by forcing it to change slower so it doesn't jump to some horible state when updating.
 
-### LSTM
+In a completly unrigourous and handwavy way, I also think I can say that it probably performs worse on this learning task (or at the very least not much better). This is because the space is so simple, it is OK for SGD to update quickly at the beginning. So all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it.
 
-Now, back to the main goal of creating a network that has some understanding of text.
+The fact that in actual learning tasks, RMSprop and similar methods are so popular seem to indicate that in real learning tasks, steady learning processses are essenctial for gradient based learning to work.
+
+## LSTM
+
+### Learning task
 
 I will start out with a rather simple learning task: recognize most likely next letter.
 
 For example, if it gets input "I am goin", it should output "g", as it is pretty obvious that the statement is: "I am going".
 
-Amazingly, my first successful run produced somewhat OK results, with the letters a,e, and i featuring prominently, and other letters appearing occasionally. This is still very bad though, even for a small network like mine.
+One nice property of this task is that if you know english, you should be able to perform the task better. So perhaps in order to perform the task, it also will learn a bit about english in the process.
+
+#### Training text
+
+I chose the text huckleberry fin, partly because its copyright is expired, and partly becasue it has a districtive writing stlye that we can see if the network identifies. I found a text copy on Project Gutenberg ([license](
+https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License))
+
+Initial results
+
+## Part 2: improving the network
+
+Unfortunately, it is difficult to reasonably test theoritical hypothesis of how algorithms work. We know they work, and we can state properties of them, but especially something as complicated as LSTMs, it is hard to track down any sort of causation or fundamental nature.
 
 
 
-#### Huck fin
-https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License
+Because solving problems is easier than figuring out fundamental reasons for phenomena, I also want to explore how one might improve LSTMs. Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current tequniques like stacking LSTMS do this effectively.
+
+I think that this condensation over time is vital to creating human level intelligence. The very idea of attention is related to the conscious self, which can only focus on a small number of things at a time. So it relies on something lower level to condense the relevant information to something we can reasonably expect the machine to focus on.
+
+
+## Appendix A: Execution and Debugging of Neural Network Code
+
+### Theano
+
+Ok, now on to creating the code. I chose Theano, which I think is a really cool framework, independent of all the cool neural networks it allows you to build. Basically, it view the program as a graph. This allows the following:
+
+* Manipulate the program graph in order to make the code faster.
+    * memory reuse optimization
+* Hardware support
+    * Very easy and efficient GPU computation
+    * cluster computation, including muti-GPU computation
+* Allows for easy generation of code flow charts
+* Automatic and efficient computation of gradients, saving a lot of code
+
+Unfortunately, it comes with the downside that the code creation and execution are more separated than usual, making it somewhat harder to debug. Luckily, the Theano developers put a lot of work into making this problem better.
+
+### Saving/loading of trained weights
+
+Training takes awhile.
+
+### Batch Learning
+
+### GPU install process

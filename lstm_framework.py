@@ -27,7 +27,7 @@ def stateful_predict():
 
 base_input_filename = "saved_cells/huck_fin_input_data.npy"
 first_stage_cell_filename = "saved_cells/huck_fin_small_cell.npy"
-second_stage_cell_filename = "saved_cells/huck_fin_stage1_output.npy"
+second_stage_output_filename = "saved_cells/huck_fin_stage1_output.npy"
 
 
 #in_base_stack = np.load(base_input_filename)

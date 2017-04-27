@@ -6,6 +6,8 @@ from WeightBias import WeightBias
 from shared_save import RememberSharedVals
 import os
 import time
+import lstm_framework
+import string_processing
 
 #theano.config.optimizer="fast_compile"
 #theano.config.scan.allow_gc=True
@@ -138,6 +140,34 @@ class LSTM:
                 n_steps=stateful_inputs.shape[0]
             )
             return cells,outs,full_outs
+
+        def stateful_gen_fn():
+            in1 = T.vector("geninput1")
+            prevcell = T.vector("prevcell")
+            prevout = T.vector("prevout")
+            (newcell,newout,full_out) = calc_full_output(in1,prevcell,prevout)
+            myfn = theano.function(
+                inputs=[in1,prevcell,prevout],
+                outputs=[newcell,newout,full_out]
+            )
+            in_second_stack = np.load(lstm_framework.second_stage_output_filename)
+            def get_np(idx):
+                arr = np.ones(string_processing.CHARS_LEN,dtype="float32")*(-0.9)
+                arr[idx] = 0.99
+                return arr
+            inidx = 4
+            pout = np.zeros(OUT_LEN,dtype="float32")
+            pcell = np.zeros(OUT_LEN,dtype="float32")
+            all_outs = []
+            for x in range(3000):
+                inp = np.concatenate((get_np(inidx),in_second_stack[x]))
+                pcell,pout,full_out = myfn(inp,pcell,pout)
+                outlist = list(full_out)
+                inidx = outlist.index(max(outlist))
+                #print(inidx)
+                all_outs.append(inidx)
+
+            return all_outs
         def get_stateful_predict():
             return theano.function(
                 [stateful_inputs],
@@ -149,9 +179,16 @@ class LSTM:
                 [stateful_fn(stateful_inputs)[0]]
             )
 
+        def get_stateful_gen_fn():
+            return theano.function(
+                [],
+                [stateful_gen_fn()]
+            )
+
         self.train_fn = get_batched_train_pred()
         self.state_predict = get_stateful_predict()
         self.stateful_cells = get_stateful_cells()
+        self.stateful_gen = stateful_gen_fn()
 
     def train(self,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
         num_trains = 0

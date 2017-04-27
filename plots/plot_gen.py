@@ -8,18 +8,20 @@ td.average_n_steps(5)
 td.filter_lines([x for x in range(3,6)])
 td.show_plot()
 '''
-#'''
-fname ="plot_data/huck_fin_stage3outsub_train_test0/"
+#'''huck_fin_stage3outsub_fixed_train_test
+#fname ="plot_data/joined_data/"
+fname ="plot_data/joined_data_600_lstmtrain/"
 # asd
-td = TimeData(fname+"cell_forget_bias.tsv")
-td.filter_lines([x for x in range(2,15)])
-td.show_plot()
+#td = TimeData(fname+"cell_forget_bias.tsv")
+#td.filter_lines([x for x in range(2,15)])
+#td.show_plot()
 td = TimeData(fname+"error_mag.tsv")
 td.average_n_steps(100)
+td.crop_window(100,40000)
 td.show_plot()
-td = TimeData(fname+"update_mag.tsv")
+#td = TimeData(fname+"update_mag.tsv")
 #td.average_n_steps(100)
-td.show_plot()
+#td.show_plot()
 #'''
 
 
