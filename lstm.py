@@ -62,8 +62,9 @@ class LSTM:
             return added_cell_state,new_output
 
         def calc_error(expected, actual):
-            probs_char = T.exp(actual) / T.sum(T.exp(actual)) # probabilities for next chars
-            error = -T.log(T.sum(probs_char*expected)) # softmax (cross-entropy loss#)
+            probs_not_normalized = T.exp(actual)
+            norm_probs = probs_not_normalized / T.sum(probs_not_normalized) # probabilities for next chars
+            error = -T.sum(T.log(norm_probs)*expected) # softmax (cross-entropy loss#)
             #sqrtdiff = (expected - actual)
             #diff = sqrtdiff * sqrtdiff
             #error = diff.sum()
@@ -86,7 +87,7 @@ class LSTM:
             out_cell_state = all_cell_state[-1]
             new_out = all_out[-1]
 
-            true_out = T.tanh(full_output_fn.calc_output(new_out))
+            true_out = full_output_fn.calc_output(new_out)
 
             error = calc_error(true_out,expected_vec)
             train_plot_util.add_plot("error_mag",error)

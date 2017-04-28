@@ -16,7 +16,7 @@ STRUCTURE LEADS TO MORE SIGNIFICANT RESULTS THAN MATHMATICAL TRICKS.
 
 THE LEARNING TASK OF GUESSING THE NEXT LETTER IS NOT REALLY A RENFORCEMENT LEARNING TASK. RATHER, i
 
-THE COMPRESSION ALGORIHM IS USEFUL BECAUSE IF YOU CAN DO THAT< THEN YOU CAN DO ALL THESE OTHER THINGS TOO, like natral language processing.
+THE COMPRESSION ALGORIHM IS USEFUL BECAUSE IF YOU CAN DO THAT< THEN YOU CAN DO ALL THESE OTHER THINGS TOO, like natural language processing.
 
 To start out, I will cover LSTMs, as they are the base for what I am trying to do. There is an awesome description of them [here](http://colah.github.io/posts/2015-08-Understanding-LSTMs/), and I will be using diagrams from that source (which are generously published as public domain).
 
@@ -64,7 +64,7 @@ In order to accomplish this, I made a tools that save values in the network to a
 
 ### First Neural Net
 
-To get back into practice with neural nets, and accustomize myself to the working of Theano, I made an extremely simple 3 layer neural net, and trained it on an extremely simple learning task. The task was to learn a Caesar cipher of 1, that is the letters A,B,C,...,Y,Z turns into B,C,D,...,Z,A. Even though this is a trivial learning task, it reveals some interesting facts about neural networks and gradient descent.
+To get back into practice with neural nets, and accustomed myself to the working of Theano, I made an extremely simple 3 layer neural net, and trained it on an extremely simple learning task. The task was to learn a Caesar cipher of 1, that is the letters A,B,C,...,Y,Z turns into B,C,D,...,Z,A. Even though this is a trivial learning task, it reveals some interesting facts about neural networks and gradient descent.
 
 The data set I was training on is an excerpt from Douglas Adam's *Hitchhiker's Guide to the Galaxy*. It is in `data/test_text.txt`. The code to run the learning scheme is in `theanoexp.py`. It encodes the letters with a 26 node input and output, which correspond to the 26 letters, and has a hidden layer size of 100.
 
@@ -86,17 +86,17 @@ First, a quick overview of the history of ANN optimizers:
 
 http://sebastianruder.com/optimizing-gradient-descent/index.html#adadelta
 
-Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. Attempts to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, AdaGrad, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
+Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. Attempts to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, Adam, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
 
 In order to see if this stabilized anything, I went ahead and ran it, capturing the updating biases as it updated. Ignore the x axis, this chart is on the same sort of timescale as the one above using ordinary SGD.
 
 ![alt](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/rmprop_long_update.png "biases in output layer using rmsprop")
 
-You can see that at the very beginning, it is changing much slower than SGD. When I reviewed the formulas, I realised that this is almost certainly the primary intention of RMSprop: to stablize outcomes by forcing it to change slower so it doesn't jump to some horible state when updating.
+You can see that at the very beginning, it is changing much slower than SGD. When I reviewed the formulas, I realized that this is almost certainly the primary intention of RMSprop: to stablize outcomes by forcing it to change slower so it doesn't jump to some horrible state when updating.
 
-In a completly unrigourous and handwavy way, I also think I can say that it probably performs worse on this learning task (or at the very least not much better). This is because the space is so simple, it is OK for SGD to update quickly at the beginning. So all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it.
+In a completely unrigourous and hand-wavy way, I also think I can say that it probably performs worse on this learning task (or at the very least not much better). This is because the space is so simple, it is OK for SGD to update quickly at the beginning. So all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it.
 
-The fact that in actual learning tasks, RMSprop and similar methods are so popular seem to indicate that in real learning tasks, steady learning processses are essenctial for gradient based learning to work.
+The fact that in actual learning tasks, RMSprop and similar methods are so popular seem to indicate that in real learning tasks, steady learning processes are essential for gradient based learning to work.
 
 ## LSTM
 
@@ -106,24 +106,24 @@ I will start out with a rather simple learning task: recognize most likely next 
 
 For example, if it gets input "I am goin", it should output "g", as it is pretty obvious that the statement is: "I am going".
 
-One nice property of this task is that if you know english, you should be able to perform the task better. So perhaps in order to perform the task, it also will learn a bit about english in the process.
+One nice property of this task is that if you know English, you should be able to perform the task better. So perhaps in order to perform the task, it also will learn a bit about English in the process.
 
 #### Training text
 
-I chose the text huckleberry fin, partly because its copyright is expired, and partly becasue it has a districtive writing stlye that we can see if the network identifies. I found a text copy on Project Gutenberg ([license](
+I chose the text huckleberry fin, partly because its copyright is expired, and partly because it has a distractive writing style that we can see if the network identifies. I found a text copy on Project Gutenberg ([license](
 https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License))
 
 Initial results:
 
 ## Part 2: improving the network
 
-Unfortunately, it is difficult to reasonably test theoritical hypothesis of how algorithms work. We know they work, and we can state properties of them, but especially something as complicated as LSTMs, it is hard to concretely track down any sort of causation or fundamental nature.
+Unfortunately, it is difficult to reasonably test theoretical hypothesis of how algorithms work. We know they work, and we can state properties of them, but especially something as complicated as LSTMs, it is hard to concretely track down any sort of causation or fundamental nature.
 
-However, there is some intuition associated with it. 
+However, there is some intuition associated with it.
 
 One way I like doing is to alter the algorithm based on
 
-Because solving problems is easier than figuring out fundamental reasons for phenomena, I also want to explore how one might improve LSTMs. Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current tequniques like stacking LSTMS do this effectively.
+Because solving problems is easier than figuring out fundamental reasons for phenomena, I also want to explore how one might improve LSTMs. Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current techniques like stacking LSTMS do this effectively.
 
 I think that this condensation over time is vital to creating human level intelligence. The very idea of attention is related to the conscious self, which can only focus on a small number of things at a time. So it relies on something lower level to condense the relevant information to something we can reasonably expect the machine to focus on.
 
@@ -146,8 +146,18 @@ Unfortunately, it comes with the downside that the code creation and execution a
 
 ### Saving/loading of trained weights
 
-Training takes awhile.
+Training takes awhile. At least when I did it, I wanted to stop the process so that I could view plots, adjust learning rates, and see if it is actually learning. I then wanted to start it up again right where it left off. The `shared_save.py` file is dedicated to this task.
+
+I found this absolutely essential to effectively working with this experimental work.
+
+It also was nice because then I could use Amazon Spot GPU instances, which are much cheaper than On Demand instances, but can interrupt your code at will.
 
 ### Batch Learning
 
+The primary hardware optimization for Neural Networks is batched learning. Some people mistakenly think that this has some deeper meaning which it does not (batches of size 1 are optimal for sequential processors), but it does allow significant data parallelism. It makes the difference between GPUs being useful and useless, and even on CPUs makes it many times faster. I used batch sizes of 128 or 256 on GPUs, which allowed my model to train dozens of times faster.
+
 ### GPU install process
+
+It turns out that installing all the software for GPU computation using Theano is amazingly hard, at every level. CUDA, which Nvidia puts substantial amount of effort into making installation easy, requires the unbelievably bloated VS 14 compiler on windows, and substantial system configuration on Linux. Theano's gpuarray backend is broken on windows and you need to install from source on Linux.
+
+Basically, if all this installation process was easier, people would use GPUs much more for computation, and probably deep learning as a field of study would be more accessible.

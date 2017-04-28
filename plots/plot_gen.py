@@ -10,14 +10,14 @@ td.show_plot()
 '''
 #'''huck_fin_stage3outsub_fixed_train_test
 #fname ="plot_data/joined_data/"
-fname ="plot_data/joined_data_600_lstmtrain/"
+fname ="plot_data/huck_fin_basic_good_cost2_train_test0/"
 # asd
 #td = TimeData(fname+"cell_forget_bias.tsv")
 #td.filter_lines([x for x in range(2,15)])
 #td.show_plot()
 td = TimeData(fname+"error_mag.tsv")
-td.average_n_steps(100)
-td.crop_window(100,40000)
+#td.average_n_steps(100)
+#td.crop_window(100,40000)
 td.show_plot()
 #td = TimeData(fname+"update_mag.tsv")
 #td.average_n_steps(100)

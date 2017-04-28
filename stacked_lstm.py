@@ -38,10 +38,11 @@ def cells_to_outputs(cells):
 #### Base LSTM training
 def run_basic_lstm():
     in_base_stack = np.load(lstm_framework.base_input_filename)
-    my_lstm = lstm_framework.gen_lstm_with("huck_fin_basic_good_cost",in_base_stack,in_base_stack,200)
-    #[out_vals] = my_lstm.state_predict(in_base_stack)
+    my_lstm = lstm_framework.gen_lstm_with("huck_fin_basic_good_cost2",in_base_stack,in_base_stack,100)
+    #[out_vals] = my_lstm.state_predict(in_base_stack[:3000])
     #outstr = string_processing.out_list_to_str(out_vals)
     #save_text("sampled_outputs/base_output_full.txt",outstr)
+    #print(outstr)
     #print(compare_text(outstr))
     my_lstm.train(in_base_stack,in_base_stack,50)
     #my_lstm.save_stateful_cells(first_stage_cell_filename,in_stack)
