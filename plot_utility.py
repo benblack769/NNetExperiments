@@ -4,20 +4,20 @@ import numpy
 plot_dir = "plots/plot_data"
 
 def data_to_bytes(time_frame,numpy_vec):
-    flat = numpy_vec.flatten()
-    data = (str(val) for val in flat)
+    data = (str(val) for val in numpy_vec)
     datastr = str(time_frame)+"\t"
     datastr += "\t".join(data)+"\n"
     databytes = bytes(datastr,encoding="utf8")
     return databytes
 
 class Plot:
-    def __init__(self,name,data_source,folder_name,skip_updates=0):
+    def __init__(self,name,data_source,folder_name,skip_updates=0,trucate_array_end=100000000000000000):
         self.data_source = data_source
         self.name = name
         self.update_num = 0
         self.update_mod = 1+skip_updates
         self.time_frame = 1
+        self.trucate_array_end = trucate_array_end
         filename = os.path.join(folder_name,self.name) + ".tsv"
         unbuffered = 0
         append_opening = "ab"
@@ -27,7 +27,9 @@ class Plot:
         return self.data_source
 
     def _save_data(self,process_output):
-        self.file.write(data_to_bytes(self.time_frame,process_output))
+        full_vec = process_output.flatten()
+        trucated_vec = full_vec[:self.trucate_array_end]
+        self.file.write(data_to_bytes(self.time_frame,trucated_vec))
 
     def set_update(self,process_output):
         if self.update_num % self.update_mod == 0:
@@ -45,9 +47,9 @@ class PlotHolder:
         self.dir_name = os.path.join(plot_dir, dir_name)
         self.init_dir()
 
-    def add_plot(self,name,data_source,skip_updates=0):
+    def add_plot(self,name,data_source,skip_updates=0,trucate_array_end=100000000000000000):
         assert self.output_start == None, "add all plots before appending plots!"
-        newplot = Plot(name,data_source,self.dir_name,skip_updates)
+        newplot = Plot(name,data_source,self.dir_name,skip_updates,trucate_array_end)
         self.plots.append(newplot)
 
     def append_plot_outputs(self,cur_outputs):

@@ -35,7 +35,10 @@ class RememberSharedVals:
         self.update_freq = update_freq
         self.time_last_saved = time.process_time()
         self.has_saved = False
+    def names(self):
+        return [val.name for val in self.vals]
     def add_shared_val(self,share_val):
+        assert share_val.name in self.names(), "cannot add two shared values with the same name to a single RememberSharedVals object"
         _load_share(self.path(),share_val)
         self.vals.append(share_val)
     def add_shared_vals(self,sh_val_list):
