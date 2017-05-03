@@ -52,6 +52,12 @@ class RememberSharedVals:
             self.force_update()
     def path(self):
         return os.path.join(SHARED_DIR,self.name)
+    def share_save_fn(self,fn):
+        def newfn(*args):
+            out = fn(*args)
+            self.vals_updated()
+            return out
+        return newfn
     def force_update(self):
         name = SHARED_DIR+self.name
         tempname = SHARED_DIR+"_tmp_"+self.name

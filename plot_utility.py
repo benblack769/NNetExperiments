@@ -70,3 +70,10 @@ class PlotHolder:
             self.dir_name += "0"
 
         os.makedirs(self.dir_name)
+
+    def get_plot_update_fn(train_fn):
+        def new_train_fn(*args):
+            output = train_fn(inpt,expect)
+            plot_holder.update_plots(output)
+            return output
+        return new_train_fn

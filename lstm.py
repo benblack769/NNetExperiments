@@ -107,6 +107,7 @@ class TwoLayerLSTM:
         assert layer1.OUT_LEN == layer2.IN_LEN, "layers do not match up"
         self.layer1 = layer1
         self.layer2 = layer2
+        self.save_name = layer1.save_name + layer2.save_name
 
     def get_weight_biases(self):
         return self.layer1.get_weight_biases() + self.layer2.get_weight_biases()
@@ -147,25 +148,32 @@ def flatten(deeplist):
     flatten_help(out,deeplist)
     return out
 
+def output_nps_fn(train_fn):
+    def newfn(*args):
+        blocks = train_fn(*args)
+        outputs = to_numpys(blocks)
+        return blocks
+    return newfn
+
 class RMSpropOpt:
-    def __init__(self):
+    def __init__(self,LEARNING_RATE,DECAY_RATE=0.9):
+        self.LEARNING_RATE = np.float32(LEARNING_RATE)
+        self.DECAY_RATE = np.float32(DECAY_RATE)
         self.grad_sqrd_mag = theano.shared(np.float32(400),self.save_name+"_grad_sqrd_mag")
 
     def get_shared_states(self):
         return [self.grad_sqrd_mag]
 
     def updates(self,error,weight_biases):
-        DECAY_RATE = np.float32(0.9)
-        LEARNING_RATE = np.float32(0.01)
-        STABILIZNG_VAL = np.float32(0.00001)
+        STABILIZNG_VAL = np.float32(0.0001**2)
 
         all_grads = T.grad(error,wrt=weight_biases)
 
         gsqr = sum(T.sum(g*g) for g in all_grads)
 
-        grad_sqrd_mag_update = DECAY_RATE * self.grad_sqrd_mag + (np.float32(1)-DECAY_RATE)*gsqr
+        grad_sqrd_mag_update = DECAY_RATE * self.grad_sqrd_mag + (np.float32(1)-self.DECAY_RATE)*gsqr
 
-        wb_update_mag = LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
+        wb_update_mag = self.LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
         train_plot_util.add_plot("update_mag",wb_update_mag)
 
         wb_update = [(wb,wb - wb_update_mag * grad) for wb,grad in zip(weight_biases,all_grads)]
@@ -211,10 +219,6 @@ class Learner:
         )
         return cells,outs
 
-    def stateful_output(stateful_ins):
-        cells,outs = self.my_scan(stateful_ins,False)
-        return outs
-
     def prop_through_sequence(self,invecs):
         cells,outs = self.my_scan(stateful_ins,True)
         return outs[-1]
@@ -238,9 +242,13 @@ class Learner:
             train_plot_util.append_plot_outputs([]),
             updates=updates
         )
-        return train_fn
+        np_output_fn = output_nps_fn(train_fn)
+        train_fn_plotup = train_plot_util.get_plot_update_fn(np_output_fn)
+        train_fn_saveup = self.shared_value_saver.share_save_fn(train_fn_plotup)
+        return train_fn_saveup
 
-    '''def stateful_gen_fn():
+    def stateful_gen_fn():
+        #invalid function
         in1 = T.vector("geninput1")
         prevcell = T.vector("prevcell")
         prevout = T.vector("prevout")
@@ -266,35 +274,34 @@ class Learner:
             #print(inidx)
             all_outs.append(inidx)
 
-        return all_outs'''
+        return all_outs
 
     def get_stateful_predict(self):
         stateful_inputs = T.matrix(self.save_name+"_state_inputs",dtype="float32")
+        cells,outs = self.my_scan(stateful_inputs,False)
         return theano.function(
             [stateful_inputs],
-            [self.stateful_fn(stateful_inputs)[2]]
+            [outs]
         )
-    def get_stateful_cells():
+    def get_stateful_cells(self):
         stateful_inputs = T.matrix(self.save_name+"_state_inputs",dtype="float32")
+        cells,outs = self.my_scan(stateful_inputs,False)
         return theano.function(
             [stateful_inputs],
-            [self.stateful_fn(stateful_inputs)[0]]
+            [cells]
         )
 
 def to_numpys(outlist):
     return [np.asarray(o) for o in outlist]
 
-def train(self,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
+def train(learner,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
     num_trains = 0
     time_last = time.clock()
     train_time = 0
-    for inpt,expect in self.output_trains(np.transpose(input_stack),np.transpose(exp_stack),NUM_EPOCS):
+    for inpt,expect in output_trains(np.transpose(input_stack),np.transpose(exp_stack),NUM_EPOCS):
         start = time.clock()
-        blocks = self.train_fn(inpt,expect)
+        output = learner.train_fn(inpt,expect)
         train_time += time.clock() - start
-        output = to_numpys(blocks)
-        self.train_plot_util.update_plots(output)
-        self.shared_value_saver.vals_updated()
         if num_trains%30==0 and show_timings:
             now = time.clock()
             print("train update took {}".format(now-time_last),flush=True)
@@ -303,7 +310,8 @@ def train(self,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
             train_time = 0
         num_trains += 1
 
-    self.shared_value_saver.force_update()
+    learner.shared_value_saver.force_update()
+
 def plot_stateful_cells(self):
     [cells] = my_lstm.stateful_cells(in_stack[:3000])
     dir_name = "plots/plot_data/cell_time_plot"
@@ -319,9 +327,9 @@ def save_stateful_predicted(self,filename,in_stack):
     [cells] = self.state_predict(in_stack)
     np.save(filename,cells)
 
-def output_trains(self,input_ar,exp_ar,num_trains):
-    SEQUENCE_LEN = self.SEQUENCE_LEN
-    BATCH_SIZE = self.BATCH_SIZE
+def output_trains(learner,input_ar,exp_ar,num_trains):
+    SEQUENCE_LEN = learner.SEQUENCE_LEN
+    BATCH_SIZE = learner.BATCH_SIZE
     for i in range(num_trains):
         for mid in range(SEQUENCE_LEN,input_ar.shape[1]-BATCH_SIZE-1,BATCH_SIZE):
             start = mid - SEQUENCE_LEN
