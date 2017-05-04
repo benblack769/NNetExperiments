@@ -16,7 +16,7 @@ import itertools
 def calc_error_catagorized(expected, actual):
     probs_not_normalized = T.exp(actual)
     norm_probs = probs_not_normalized / T.sum(probs_not_normalized) # probabilities for next chars
-    error = -T.sum(T.log(norm_probs)*expected) # softmax (cross-entropy loss#)
+    error = T.sum(T.log(norm_probs)*expected) # softmax (cross-entropy loss#)
     return error
 
 def calc_error_squared(expected, actual):

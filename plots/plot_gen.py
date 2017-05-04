@@ -1,5 +1,9 @@
 from plot_data import TimeData
 
+foldname = "plot_data/layer1layer2_train_test0/"
+td = TimeData(foldname+"error_mag.tsv")
+td.show_plot()
+
 '''
 fname = "plot_data/cell_time_plot/cell_state_data.tsv"
 td = TimeData(fname)
@@ -8,7 +12,7 @@ td.average_n_steps(5)
 td.filter_lines([x for x in range(3,6)])
 td.show_plot()
 '''
-#'''huck_fin_stage3outsub_fixed_train_test
+'''huck_fin_stage3outsub_fixed_train_test
 #fname ="plot_data/joined_data/"
 fname ="plot_data/huck_fin_basic_good_cost2_train_test0/"
 # asd
@@ -22,7 +26,7 @@ td.show_plot()
 #td = TimeData(fname+"update_mag.tsv")
 #td.average_n_steps(100)
 #td.show_plot()
-#'''
+'''
 
 
 #LSTM bias updating
