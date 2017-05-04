@@ -6,10 +6,10 @@ import string_processing
 from lstm import *
 
 SEQUENCE_LEN = 50
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 
 IN_LEN = string_processing.CHARS_LEN
-HIDDEN_LEN = 100
+HIDDEN_LEN = 600
 OUT_LEN = string_processing.CHARS_LEN
 
 layer1 = LSTM_Layer("layer1",IN_LEN,HIDDEN_LEN)
