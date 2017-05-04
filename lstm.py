@@ -14,10 +14,24 @@ import itertools
 #theano.config.scan.allow_gc=True
 
 def calc_error_catagorized(expected, actual):
-    probs_not_normalized = T.exp(actual)
-    norm_probs = probs_not_normalized / T.sum(probs_not_normalized) # probabilities for next chars
-    error = T.sum(T.log(norm_probs)*expected) # softmax (cross-entropy loss#)
+    probs = T.nnet.softmax(actual)
+    lookat_probs = expected * probs
+    act_probs = T.sum(lookat_probs,axis=1)
+    stabalizer_val = np.float32(1e-8)
+    error = -T.sum(T.log(act_probs + stabalizer_val))
     return error
+in1 = T.matrix("arg")
+in2 = T.matrix("arg")
+
+func = theano.function(
+inputs=[in1,in2],
+outputs=[calc_error_catagorized(in1,in2)]
+)
+mat1 = np.array([[1,0],[1,0],[0,1]],dtype="float32")
+mat2 = np.array([[2,3],[3,4],[-1,2]],dtype="float32")
+print(mat1)
+print(mat2)
+print(func(mat1,mat2))
 
 def calc_error_squared(expected, actual):
     sqrtdiff = (expected - actual)
@@ -47,8 +61,8 @@ class LSTM_Layer:
         )
 
     def set_train_watch(self,train_plot_util):
-        train_plot_util.add_plot("cell_forget_weights",self.cell_forget_fn.W,1000,300)
-        train_plot_util.add_plot("cell_add_weights",self.add_cell_fn.W,1000,300)
+        train_plot_util.add_plot(self.save_name+"_cell_forget_weights",self.cell_forget_fn.W,100,300)
+        train_plot_util.add_plot(self.save_name+"_cell_add_weights",self.add_cell_fn.W,100,300)
 
     def calc_output(self,in_vec,cell_states):
         '''
@@ -232,7 +246,7 @@ class Learner:
 
         full_output = self.prop_through_sequence(inputs)
 
-        error = self.cost_fn(full_output,expected)
+        error = self.cost_fn(expected,full_output)
         train_plot_util.add_plot("error_mag",error)
 
         updates = self.optimizer.updates(error,self.forward_prop.get_weight_biases())
