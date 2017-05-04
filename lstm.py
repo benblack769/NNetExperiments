@@ -116,7 +116,7 @@ class TwoLayerLSTM:
         prevcell1,prevcell2 = cells
         out1,outcell1 = self.layer1.calc_output(inputs,prevcell1)
         out2,outcell2 = self.layer2.calc_output(out1,prevcell2)
-        return out2,[outcell1,outcell2]
+        return out2,(outcell1+outcell2)
 
     def set_train_watch(self,train_plot_util):
         self.layer1.set_train_watch(train_plot_util)
@@ -125,29 +125,25 @@ class TwoLayerLSTM:
     def init_cells(self):
         return [self.layer1.init_cells(), self.layer2.init_cells()]
 
-    def init_cells_batched(self):
-        return [self.layer1.init_cells_batched(),self.layer2.init_cells_batched()]
+    def init_cells_batched(self,batch_size):
+        return [self.layer1.init_cells_batched(batch_size),self.layer2.init_cells_batched(batch_size)]
 
 def build_list_in_pattern_help(initer,pattern):
     if not isinstance(pattern,list):
         return next(initer)
     outlist = []
     for l in pattern:
-        outlist.append(build_list_in_pattern_help(initer,pattern))
+        outlist.append(build_list_in_pattern_help(initer,l))
     return outlist
 def build_list_in_pattern(inlist,pattern):
     return build_list_in_pattern_help(iter(inlist),pattern)
-def flatten_help(build_list,deeplist):
-    if isinstance(l,list):
-        for l in deeplist:
-            flatten_help(build_list,deeplist)
-    else:
-        build_list.append(deeplist)
 def flatten(deeplist):
-    out = []
-    flatten_help(out,deeplist)
-    return out
-
+    if isinstance(deeplist,list) or isinstance(deeplist,tuple):
+        for l in deeplist:
+            for x in flatten(l):
+                yield(x)
+    else:
+        yield (deeplist)
 def output_nps_fn(train_fn):
     def newfn(*args):
         blocks = train_fn(*args)
@@ -159,7 +155,7 @@ class RMSpropOpt:
     def __init__(self,LEARNING_RATE,DECAY_RATE=0.9):
         self.LEARNING_RATE = np.float32(LEARNING_RATE)
         self.DECAY_RATE = np.float32(DECAY_RATE)
-        self.grad_sqrd_mag = theano.shared(np.float32(400),self.save_name+"_grad_sqrd_mag")
+        self.grad_sqrd_mag = theano.shared(np.float32(400),"grad_sqrd_mag")
 
     def get_shared_states(self):
         return [self.grad_sqrd_mag]
@@ -171,10 +167,9 @@ class RMSpropOpt:
 
         gsqr = sum(T.sum(g*g) for g in all_grads)
 
-        grad_sqrd_mag_update = DECAY_RATE * self.grad_sqrd_mag + (np.float32(1)-self.DECAY_RATE)*gsqr
+        grad_sqrd_mag_update = self.DECAY_RATE * self.grad_sqrd_mag + (np.float32(1)-self.DECAY_RATE)*gsqr
 
         wb_update_mag = self.LEARNING_RATE / T.sqrt(grad_sqrd_mag_update + STABILIZNG_VAL)
-        train_plot_util.add_plot("update_mag",wb_update_mag)
 
         wb_update = [(wb,wb - wb_update_mag * grad) for wb,grad in zip(weight_biases,all_grads)]
         return wb_update + [(self.grad_sqrd_mag,grad_sqrd_mag_update)]
@@ -190,37 +185,42 @@ class SGD_Opt:
 
 class Learner:
     def __init__(self,forward_prop,optimizer,cost_fn,BATCH_SIZE,SEQUENCE_LEN):
+        self.BATCH_SIZE = BATCH_SIZE
+        self.SEQUENCE_LEN = SEQUENCE_LEN
         self.forward_prop = forward_prop
         self.optimizer = optimizer
         self.cost_fn = cost_fn
         self.save_name = self.forward_prop.save_name
-        self.shared_value_saver = RememberSharedVals(forward_prop.save_name+'_lstm')
+        self.shared_value_saver = RememberSharedVals(self.save_name+'_lstm')
 
         self.shared_value_saver.add_shared_vals(forward_prop.get_weight_biases())
         self.shared_value_saver.add_shared_vals(optimizer.get_shared_states())
 
-    def my_scan(self,state_ins,use_batching):
+    def my_scan(self,stateful_ins,use_batching):
         if use_batching:
-            init_cells = self.forward_prop.init_cells_batched()
+            init_cells = self.forward_prop.init_cells_batched(self.BATCH_SIZE)
         else:
             init_cells = self.forward_prop.init_cells()
 
         out_inf_cells = [dict(initial=icell,taps=[-1]) for icell in flatten(init_cells)]
-        out_info_all = list(itertools.chain((None,oi_cell) for oi_cell in out_inf_cells))
 
         def calc_output_wrapper(*args):
-            pattenred_args = build_list_in_pattern(args,init_cells)
-            return flatten(self.forward_prop.calc_output(pattenred_args))
+            pattenred_args = build_list_in_pattern(args[1:],init_cells)
+            out, cells = self.forward_prop.calc_output(args[0],pattenred_args)
+            print(out)
+            return [out]+cells
 
-        [cells,outs],updates = theano.scan(
+        all_outputs,updates = theano.scan(
             calc_output_wrapper,
             sequences = [stateful_ins],
-            outputs_info = out_info_all
+            outputs_info = [None]+out_inf_cells
         )
+        outs = all_outputs[0]
+        cells=all_outputs[1:]
         return cells,outs
 
     def prop_through_sequence(self,invecs):
-        cells,outs = self.my_scan(stateful_ins,True)
+        cells,outs = self.my_scan(invecs,True)
         return outs[-1]
 
     def get_batched_train_pred(self):
@@ -238,7 +238,7 @@ class Learner:
         updates = self.optimizer.updates(error,self.forward_prop.get_weight_biases())
 
         train_fn = theano.function(
-            [inputs,expected_vec],
+            [inputs,expected],
             train_plot_util.append_plot_outputs([]),
             updates=updates
         )
@@ -298,9 +298,10 @@ def train(learner,input_stack,exp_stack,NUM_EPOCS,show_timings=True):
     num_trains = 0
     time_last = time.clock()
     train_time = 0
-    for inpt,expect in output_trains(np.transpose(input_stack),np.transpose(exp_stack),NUM_EPOCS):
+    train_fn = learner.get_batched_train_pred()
+    for inpt,expect in output_trains(learner,np.transpose(input_stack),np.transpose(exp_stack),NUM_EPOCS):
         start = time.clock()
-        output = learner.train_fn(inpt,expect)
+        output = train_fn(inpt,expect)
         train_time += time.clock() - start
         if num_trains%30==0 and show_timings:
             now = time.clock()

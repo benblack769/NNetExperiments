@@ -38,7 +38,7 @@ class RememberSharedVals:
     def names(self):
         return [val.name for val in self.vals]
     def add_shared_val(self,share_val):
-        assert share_val.name in self.names(), "cannot add two shared values with the same name to a single RememberSharedVals object"
+        assert share_val.name not in self.names(), "cannot add two shared values with the same name to a single RememberSharedVals object"
         _load_share(self.path(),share_val)
         self.vals.append(share_val)
     def add_shared_vals(self,sh_val_list):
