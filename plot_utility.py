@@ -27,7 +27,7 @@ class Plot:
         return self.data_source
 
     def _save_data(self,process_output):
-        full_vec = process_output.flatten()
+        full_vec = numpy.asarray(process_output).flatten()
         trucated_vec = full_vec[:self.trucate_array_end]
         self.file.write(data_to_bytes(self.time_frame,trucated_vec))
 

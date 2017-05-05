@@ -176,7 +176,6 @@ class RMSpropOpt:
 
     def updates(self,error,weight_biases):
         STABILIZNG_VAL = np.float32(0.0001**2)
-
         all_grads = T.grad(error,wrt=weight_biases)
 
         gsqr = sum(T.sum(g*g) for g in all_grads)
@@ -245,7 +244,7 @@ class Learner:
         self.forward_prop.set_train_watch(train_plot_util)
 
         full_output = self.prop_through_sequence(inputs)
-
+        
         error = self.cost_fn(expected,full_output)
         train_plot_util.add_plot("error_mag",error)
 
