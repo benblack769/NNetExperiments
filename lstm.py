@@ -18,9 +18,10 @@ def calc_error_catagorized(expected, actual):
     lookat_probs = expected * probs
     act_probs = T.sum(lookat_probs,axis=1)
     stabalizer_val = np.float32(1e-8)
-    error = -T.sum(T.log(act_probs + stabalizer_val))
+    error = T.sum(T.log(act_probs + stabalizer_val))
     return error
-in1 = T.matrix("arg")
+
+'''in1 = T.matrix("arg")
 in2 = T.matrix("arg")
 
 func = theano.function(
@@ -32,7 +33,7 @@ mat2 = np.array([[2,3],[3,4],[-1,2]],dtype="float32")
 print(mat1)
 print(mat2)
 print(func(mat1,mat2))
-
+'''
 def calc_error_squared(expected, actual):
     sqrtdiff = (expected - actual)
     diff = sqrtdiff * sqrtdiff
@@ -244,7 +245,7 @@ class Learner:
         self.forward_prop.set_train_watch(train_plot_util)
 
         full_output = self.prop_through_sequence(inputs)
-        
+
         error = self.cost_fn(expected,full_output)
         train_plot_util.add_plot("error_mag",error)
 
