@@ -1,13 +1,15 @@
 from plot_data import TimeData
 
-foldname = "plot_data/layer1layer5_train_test/"
+foldname = "plot_data/layer1layer7_train_test00/"
+layer_names = ["layer1_","layer7_"]
 td = TimeData(foldname+"error_mag.tsv")
 td.average_n_steps(50)
 td.show_plot()
-td = TimeData(foldname+"cell_forget_weights.tsv")
-td.show_plot()
-td = TimeData(foldname+"cell_add_weights.tsv")
-td.show_plot()
+for lname in layer_names:
+    td = TimeData(foldname+lname+"cell_forget_weights.tsv")
+    td.show_plot()
+    td = TimeData(foldname+lname+"cell_add_weights.tsv")
+    td.show_plot()
 
 '''
 fname = "plot_data/cell_time_plot/cell_state_data.tsv"

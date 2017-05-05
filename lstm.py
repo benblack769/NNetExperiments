@@ -48,10 +48,10 @@ class LSTM_Layer:
         self.CELL_STATE_LEN = OUT_LEN
         self.HIDDEN_LEN = OUT_LEN + IN_LEN
 
-        self.cell_forget_fn = WeightBias(save_name+"_cell_forget", self.HIDDEN_LEN, self.CELL_STATE_LEN,1.0)
-        self.add_barrier_fn = WeightBias(save_name+"_add_barrier", self.HIDDEN_LEN, self.CELL_STATE_LEN,0.5)
-        self.add_cell_fn = WeightBias(save_name+"_add_cell", self.HIDDEN_LEN, self.CELL_STATE_LEN,0.0)
-        self.to_new_output_fn = WeightBias(save_name+"_to_new_hidden", self.HIDDEN_LEN, self.CELL_STATE_LEN,0.5)
+        self.cell_forget_fn = WeightBias(save_name+"_cell_forget", self.HIDDEN_LEN, self.CELL_STATE_LEN)
+        self.add_barrier_fn = WeightBias(save_name+"_add_barrier", self.HIDDEN_LEN, self.CELL_STATE_LEN)
+        self.add_cell_fn = WeightBias(save_name+"_add_cell", self.HIDDEN_LEN, self.CELL_STATE_LEN)
+        self.to_new_output_fn = WeightBias(save_name+"_to_new_hidden", self.HIDDEN_LEN, self.CELL_STATE_LEN)
 
     def get_weight_biases(self):
         return (

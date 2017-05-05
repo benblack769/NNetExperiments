@@ -17,7 +17,7 @@ layer2 = LSTM_Layer("layer7",HIDDEN_LEN,OUT_LEN)
 full_layer = TwoLayerLSTM(layer1,layer2)
 layer_names = [l.name for l in full_layer.get_weight_biases()]
 
-optimizer = RMSpropOpt(0.04)
+optimizer = RMSpropOpt(0.16)
 
 full_layer_learner = Learner(full_layer,optimizer,calc_error_squared,BATCH_SIZE,SEQUENCE_LEN)
 
@@ -29,7 +29,8 @@ def generate_text_input():
 
 text_in = generate_text_input()
 NUM_EPOCS = 100
-train(full_layer_learner,text_in,text_in,NUM_EPOCS)
+#train(full_layer_learner,text_in,text_in,NUM_EPOCS)
 [outs] = full_layer_learner.get_stateful_predict()(text_in[:1000])
+#np.set_printoptions(threshold=np.inf)
 print(outs)
 print(string_processing.out_list_to_str(outs))
