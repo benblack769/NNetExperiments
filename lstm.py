@@ -13,26 +13,45 @@ import itertools
 #theano.config.optimizer="fast_compile"
 #theano.config.scan.allow_gc=True
 
+def calc_probs(expected, actual):
+
+    probs = T.nnet.softmax(trans_act)
+    lookat_probs = trans_exp * probs
+    act_probs = T.sum(lookat_probs,axis=1)
+    return probs
+
 def calc_error_catagorized(expected, actual):
     probs = T.nnet.softmax(actual)
     lookat_probs = expected * probs
     act_probs = T.sum(lookat_probs,axis=1)
     stabalizer_val = np.float32(1e-8)
-    error = T.sum(T.log(act_probs + stabalizer_val))
+    error = -T.sum(T.log(act_probs + stabalizer_val))
     return error
 
-'''in1 = T.matrix("arg")
-in2 = T.matrix("arg")
+def error_fn(T_error_funct):
+    in1 = T.matrix("arg1")
+    in2 = T.matrix("arg2")
 
-func = theano.function(
+    func = theano.function(
+        inputs=[in1,in2],
+        outputs=[calc_error_catagorized(in1,in2)],
+        on_unused_input='warn'
+    )
+    return func
+'''
+func2 = theano.function(
 inputs=[in1,in2],
 outputs=[calc_error_catagorized(in1,in2)]
 )
-mat1 = np.array([[1,0],[1,0],[0,1]],dtype="float32")
-mat2 = np.array([[2,3],[3,4],[-1,2]],dtype="float32")
+mat1 = (np.array([[1,0,0],[1,0,0],[0,1,0]],dtype="float32"))
+mat2 = (np.array([[2,3,2],[0.1,0.01,0.01],[0.1,0.08,0.05]],dtype="float32"))
+print(mat1[1:3,0:2])
+print(np.sum(mat1,axis=0))
+print(np.sum(mat1,axis=1))
 print(mat1)
 print(mat2)
 print(func(mat1,mat2))
+print(func2(mat1,mat2))
 '''
 def calc_error_squared(expected, actual):
     sqrtdiff = (expected - actual)
@@ -95,6 +114,11 @@ class LSTM_Layer:
     def init_cells(self):
         return [T.zeros(self.CELL_STATE_LEN),T.zeros(self.OUT_LEN)]
 
+test_layer = LSTM_Layer("test",4,6)
+inpu = T.matrix("Arg",dtype="float32")
+cell_state = T.matrix("Arg2",dtype="float32")
+outstart = np.zeros((10,5))
+outstart = np.zeros((10,5))
 class TanhLayer:
     def __init__(self,save_name,IN_LEN,OUT_LEN):
         self.save_name = save_name
@@ -125,7 +149,7 @@ class TwoLayerLSTM:
 
         self.IN_LEN = layer1.IN_LEN
         self.OUT_LEN = layer2.OUT_LEN
-        
+
         self.save_name = layer1.save_name + layer2.save_name
 
     def get_weight_biases(self):

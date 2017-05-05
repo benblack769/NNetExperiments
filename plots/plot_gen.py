@@ -1,7 +1,7 @@
 from plot_data import TimeData
 
-foldname = "plot_data/layer1layer7_train_test00/"
-layer_names = ["layer1_","layer7_"]
+foldname = "plot_data/layer1layer9tanh_layer_train_test0/"
+layer_names = ["layer1_","layer9_","tanh_layer_"]
 td = TimeData(foldname+"error_mag.tsv")
 td.average_n_steps(50)
 td.show_plot()

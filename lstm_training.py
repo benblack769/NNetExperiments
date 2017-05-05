@@ -17,11 +17,10 @@ layer1 = LSTM_Layer("layer1",IN_LEN,HIDDEN_LEN_1)
 layer2 = LSTM_Layer("layer9",HIDDEN_LEN_1,HIDDEN_LEN_2)
 layer3 = LSTM_Layer("tanh_layer",HIDDEN_LEN_2,OUT_LEN)
 full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
-layer_names = [l.name for l in full_layer.get_weight_biases()]
 
-optimizer = RMSpropOpt(0.06)
+optimizer = RMSpropOpt(0.02)
 
-full_layer_learner = Learner(full_layer,optimizer,calc_error_squared,BATCH_SIZE,SEQUENCE_LEN)
+full_layer_learner = Learner(full_layer,optimizer,calc_error_catagorized,BATCH_SIZE,SEQUENCE_LEN)
 
 def generate_text_input():
     train_str = string_processing.get_str("data/huck_fin.txt")
@@ -29,10 +28,24 @@ def generate_text_input():
     in_stack = np.vstack(in_vec_list)
     return in_stack
 
-text_in = generate_text_input()
-NUM_EPOCS = 100
-train(full_layer_learner,text_in,text_in,NUM_EPOCS)
-[outs] = full_layer_learner.get_stateful_predict()(text_in[:1000])
-#np.set_printoptions(threshold=np.inf)
-print(outs)
-print(string_processing.out_list_to_str(outs))
+def run():
+    text_in = generate_text_input()
+    NUM_EPOCS = 100
+    train(full_layer_learner,text_in,text_in,NUM_EPOCS)
+    [outs] = full_layer_learner.get_stateful_predict()(text_in[:1000])
+    #np.set_printoptions(threshold=np.inf)
+    print(outs)
+    print(string_processing.out_list_to_str(outs))
+
+def test():
+    text_in = generate_text_input()
+    expected = text_in[:200]
+    [actual] = full_layer_learner.get_stateful_predict()(expected)
+    act_text = string_processing.out_list_to_str(actual)
+    my_error_fn = error_fn(calc_error_squared)
+    errors = []
+    skip =  1
+    for i in range(0,198,skip):
+        [err] = my_error_fn(expected[i+1:i+skip+1],actual[i:i+skip])
+        print(err,act_text[i:i+skip])
+run()
