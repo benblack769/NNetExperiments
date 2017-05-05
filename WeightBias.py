@@ -3,7 +3,7 @@ import numpy as np
 import theano.tensor as T
 
 class WeightBias:
-    def __init__(self,name,in_len,out_len,mean_val):
+    def __init__(self,name,in_len,out_len,mean_val=0):
         self.name = name
 
         rand_weight_vals = np.random.randn(in_len*out_len).astype('float32')/in_len**(0.5**0.5) #+ mean_val / (in_len)

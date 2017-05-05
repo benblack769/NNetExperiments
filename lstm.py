@@ -105,7 +105,7 @@ class TanhLayer:
         return self.layer_fn.wb_list()
 
     def set_train_watch(self,train_plot_util):
-        return
+        train_plot_util.add_plot(self.save_name+"tanh_fn",self.cell_forget_fn.W,100,300)
 
     def calc_output(self,inputs,_no_cells):
         out = T.tanh(self.layer_fn.calc_output(outs))
@@ -122,6 +122,10 @@ class TwoLayerLSTM:
         assert layer1.OUT_LEN == layer2.IN_LEN, "layers do not match up"
         self.layer1 = layer1
         self.layer2 = layer2
+
+        self.IN_LEN = layer1.IN_LEN
+        self.OUT_LEN = layer2.OUT_LEN
+        
         self.save_name = layer1.save_name + layer2.save_name
 
     def get_weight_biases(self):

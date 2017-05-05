@@ -9,12 +9,14 @@ SEQUENCE_LEN = 50
 BATCH_SIZE = 256
 
 IN_LEN = string_processing.CHARS_LEN
-HIDDEN_LEN = 600
+HIDDEN_LEN_1 = 500
+HIDDEN_LEN_2 = 500
 OUT_LEN = string_processing.CHARS_LEN
 
-layer1 = LSTM_Layer("layer1",IN_LEN,HIDDEN_LEN)
-layer2 = LSTM_Layer("layer7",HIDDEN_LEN,OUT_LEN)
-full_layer = TwoLayerLSTM(layer1,layer2)
+layer1 = LSTM_Layer("layer1",IN_LEN,HIDDEN_LEN_1)
+layer2 = LSTM_Layer("layer8",HIDDEN_LEN_1,HIDDEN_LEN_2)
+layer3 = LSTM_Layer("tanh_layer",HIDDEN_LEN_2,OUT_LEN)
+full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
 layer_names = [l.name for l in full_layer.get_weight_biases()]
 
 optimizer = RMSpropOpt(0.16)
@@ -29,7 +31,7 @@ def generate_text_input():
 
 text_in = generate_text_input()
 NUM_EPOCS = 100
-#train(full_layer_learner,text_in,text_in,NUM_EPOCS)
+train(full_layer_learner,text_in,text_in,NUM_EPOCS)
 [outs] = full_layer_learner.get_stateful_predict()(text_in[:1000])
 #np.set_printoptions(threshold=np.inf)
 print(outs)
