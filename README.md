@@ -88,7 +88,21 @@ http://sebastianruder.com/optimizing-gradient-descent/index.html#adadelta
 
 Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. Attempts to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, Adam, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
 
-![long term dependencies image](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/rmsprop.PNG "Long term dependencies")
+Here is the actual formula that is used to calculate it:
+
+![rmsprop formula](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/rmsprop.PNG "Long term dependencies")
+
+Gramma and alpha are parameters that you get to pick. gamma is usuaally around 0.9. Theta is a measure of the magnitudes of the preious gradients. In theory, what this does is make the learning rate smaller when the gradient is steeper, perhaps slowly lowering the values into a "canyon" (where normal SGD will overshoot the valley of minimal loss and end up on the other cliff). It will also make larger changes when the gradient is smaller, which can help it get out of local minima.
+
+Other people have buit some small dimentional visualizations to capture this intuition, and show how it performs in comparison to other approaches, like the momentum approach.
+
+This one shows an example of how momentum approaches can do worse than RMSprop and AdaDelta.
+![grad1](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad1.PNG "Long term dependencies")
+
+This one shows how RMSprop can get out of an unstable equilibria very quickly.
+![grad2](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad2.PNG "Long term dependencies")
+
+However, these are contrived low dimentional problems. We want to know if these things actually work on extremely high dimentional neural networks training on real problems.
 
 In order to see if this stabilized anything, I went ahead and ran it, capturing the updating biases as it updated. Ignore the x axis, this chart is on the same sort of timescale as the one above using ordinary SGD.
 
