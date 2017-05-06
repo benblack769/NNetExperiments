@@ -18,7 +18,7 @@ layer2 = LSTM_Layer("layer12",HIDDEN_LEN_1,HIDDEN_LEN_2)
 layer3 = TanhLayer("tanh_layer1",HIDDEN_LEN_2,OUT_LEN)
 full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
 
-optimizer = RMSpropOpt(0.02)
+optimizer = RMSpropOpt(0.01)
 
 full_layer_learner = Learner(full_layer,optimizer,calc_error_catagorized,BATCH_SIZE,SEQUENCE_LEN)
 
