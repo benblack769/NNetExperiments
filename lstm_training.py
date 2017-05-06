@@ -10,15 +10,15 @@ BATCH_SIZE = 256
 
 IN_LEN = string_processing.CHARS_LEN
 HIDDEN_LEN_1 = 400
-HIDDEN_LEN_2 = 200
+HIDDEN_LEN_2 = 400
 OUT_LEN = string_processing.CHARS_LEN
 
-layer1 = LSTM_Layer("layer1",IN_LEN,HIDDEN_LEN_1)
-layer2 = LSTM_Layer("layer9",HIDDEN_LEN_1,HIDDEN_LEN_2)
-layer3 = LSTM_Layer("tanh_layer",HIDDEN_LEN_2,OUT_LEN)
+layer1 = LSTM_Layer("layer11",IN_LEN,HIDDEN_LEN_1)
+layer2 = LSTM_Layer("layer12",HIDDEN_LEN_1,HIDDEN_LEN_2)
+layer3 = TanhLayer("tanh_layer1",HIDDEN_LEN_2,OUT_LEN)
 full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
 
-optimizer = RMSpropOpt(0.05)
+optimizer = RMSpropOpt(0.02)
 
 full_layer_learner = Learner(full_layer,optimizer,calc_error_catagorized,BATCH_SIZE,SEQUENCE_LEN)
 
@@ -30,7 +30,7 @@ def generate_text_input():
 
 def run():
     text_in = generate_text_input()
-    NUM_EPOCS = 100
+    NUM_EPOCS = 500
     train(full_layer_learner,text_in,text_in,NUM_EPOCS)
     [outs] = full_layer_learner.get_stateful_predict()(text_in[:1000])
     #np.set_printoptions(threshold=np.inf)

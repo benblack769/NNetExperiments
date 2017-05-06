@@ -41,8 +41,8 @@ def join_folders_data(folder_list):
 
 def join_all():
     parent_dir = "plot_data/"
-    fold_name = "basic_layer2_train_test"
-    fold_names = [fold_name+"0"*i for i in range(2,5)]
+    fold_name = "layer1layer9tanh_layer_train_test"
+    fold_names = [fold_name+"0"*i for i in range(1,7)]
     #fold_names = ["joined_data","import_data2"]
     fold_paths = [parent_dir+name for name in fold_names]
     join_folders_data(fold_paths)
