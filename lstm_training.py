@@ -13,9 +13,9 @@ HIDDEN_LEN_1 = 400
 HIDDEN_LEN_2 = 400
 OUT_LEN = string_processing.CHARS_LEN
 
-layer1 = LSTM_Layer("layer11",IN_LEN,HIDDEN_LEN_1)
-layer2 = LSTM_Layer("layer12",HIDDEN_LEN_1,HIDDEN_LEN_2)
-layer3 = TanhLayer("tanh_layer1",HIDDEN_LEN_2,OUT_LEN)
+layer1 = LSTM_Layer("layer400",IN_LEN,HIDDEN_LEN_1)
+layer2 = LSTM_Layer("layer400",HIDDEN_LEN_1,HIDDEN_LEN_2)
+layer3 = TanhLayer("tanh_layer34",HIDDEN_LEN_2,OUT_LEN)
 full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
 
 optimizer = RMSpropOpt(0.01)
