@@ -94,13 +94,13 @@ Here is the actual formula that is used to calculate it:
 
 Gramma and alpha are parameters that you get to pick. gamma is usuaally around 0.9. Theta is a measure of the magnitudes of the preious gradients. In theory, what this does is make the learning rate smaller when the gradient is steeper, perhaps slowly lowering the values into a "canyon" (where normal SGD will overshoot the valley of minimal loss and end up on the other cliff). It will also make larger changes when the gradient is smaller, which can help it get out of local minima.
 
-Other people have buit some small dimentional visualizations to capture this intuition, and show how it performs in comparison to other approaches, like the momentum approach.
+[This](http://sebastianruder.com/optimizing-gradient-descent/) great blog describing this problem in detail buit some small dimentional visualizations to capture this intuition, and show how it performs in comparison to other approaches, like the momentum approach.
 
 This one shows an example of how momentum approaches can do worse than RMSprop and AdaDelta.
-![grad1](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad1.PNG "Long term dependencies")
+![grad1](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad1.gif "Long term dependencies")
 
 This one shows how RMSprop can get out of an unstable equilibria very quickly.
-![grad2](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad2.PNG "Long term dependencies")
+![grad2](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad2.gif "Long term dependencies")
 
 However, these are contrived low dimentional problems. We want to know if these things actually work on extremely high dimentional neural networks training on real problems.
 
@@ -108,13 +108,29 @@ In order to see if this stabilized anything, I went ahead and ran it, capturing 
 
 ![alt](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/rmprop_long_update.png "biases in output layer using rmsprop")
 
-You can see that at the very beginning, it is changing much slower than SGD. When I reviewed the formulas, I realized that this is almost certainly the primary intention of RMSprop: to stablize outcomes by forcing it to change slower so it doesn't jump to some horrible state when updating.
+You can see that at the very beginning, it is changing much slower than SGD. This is almost certainly the primary intention of RMSprop: to stablize outcomes by forcing it to change slower so it doesn't jump to some horrible state when updating. However, it is not so clear that it always works better since sometimes you really do just learn the easy stuff to learn as quickly as possible.
 
-In a completely unrigourous and hand-wavy way, I also think I can say that it probably performs worse on this learning task (or at the very least not much better). This is because the space is so simple, it is OK for SGD to update quickly at the beginning. So all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it.
+Since this learning task is so easy, I expect it to actually performs worse on this learning task (or at the very least not much better). This is because the space is so simple, it is OK for SGD to update quickly at the beginning. So all rmsprop does is slow it down. The space it is optimizing over is not nearly complex enough to need it. However, I did not have enough time to verify this using real data.
 
 The fact that in actual learning tasks, RMSprop and similar methods are so popular seem to indicate that in real learning tasks, steady learning processes are essential for gradient based learning to work.
 
+We do not think of ourselves learning steadily, though. When we see something suprizing, something wildly differnt from the norm, we often focus on it, and think about it a lot. RMSprop ensures the opposite, that when something is encountered that is different from the norm, the total ammount the ANN learns from it is in fact not much greater than what we expect to see.
+
+To me, this suggests that RMSprop is simply operating at a different level than what we think of learning in humans.
+
+Instead, it seems to be more similar to how humans experience sensation. When we have more inputs: our eyes are open, we are seeing lots of bright things, listening to loud music, etc, then it is harder to focus on smaller details. Only the most extreme sensations stand out.
+
+While sensation and learning do not really seem to be innately related, I think RMSprop and the human tendancy to adjust to the total ammount of senation are solving a similar problem: that just because there is more to see, or more to learn does not necessarily mean that it is that much more important.
+
 ## LSTM
+
+### Structure
+
+Colah's blog post [here](http://colah.github.io/posts/2015-08-Understanding-LSTMs/) is a great description of the structural aspects of LSTMs. 
+
+![lstm-diagram](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/LSTM3-chain.png "biases in output layer using rmsprop")
+
+
 
 ### Learning task
 
@@ -126,10 +142,12 @@ One nice property of this task is that if you know English, you should be able t
 
 #### Training text
 
-I chose the text huckleberry fin, partly because its copyright is expired, and partly because it has a distractive writing style that we can see if the network identifies. I found a text copy on Project Gutenberg ([license](
+I chose the text huckleberry fin, partly because its copyright is expired, and partly because it has a distinctive writing style that we can see if the network identifies. I found a text copy on Project Gutenberg ([license](
 https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License))
 
-Initial results:
+### Initial results
+
+
 
 ## Part 2: improving the network
 
