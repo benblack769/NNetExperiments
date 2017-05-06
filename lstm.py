@@ -129,10 +129,10 @@ class TanhLayer:
         return self.layer_fn.wb_list()
 
     def set_train_watch(self,train_plot_util):
-        train_plot_util.add_plot(self.save_name+"tanh_fn",self.cell_forget_fn.W,100,300)
+        train_plot_util.add_plot(self.save_name+"tanh_fn",self.layer_fn.W,100,300)
 
     def calc_output(self,inputs,_no_cells):
-        out = T.tanh(self.layer_fn.calc_output(outs))
+        out = T.tanh(self.layer_fn.calc_output(inputs))
         return out,[]
 
     def init_cells_batched(self, batch_size):
