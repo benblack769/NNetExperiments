@@ -9,12 +9,12 @@ SEQUENCE_LEN = 50
 BATCH_SIZE = 256
 
 IN_LEN = string_processing.CHARS_LEN
-HIDDEN_LEN_1 = 400
-HIDDEN_LEN_2 = 400
+HIDDEN_LEN_1 = 500
+HIDDEN_LEN_2 = 600
 OUT_LEN = string_processing.CHARS_LEN
 
-layer1 = LSTM_Layer("layer400",IN_LEN,HIDDEN_LEN_1)
-layer2 = LSTM_Layer("layer400",HIDDEN_LEN_1,HIDDEN_LEN_2)
+layer1 = LSTM_Layer("layer501",IN_LEN,HIDDEN_LEN_1)
+layer2 = LSTM_Layer("layer602",HIDDEN_LEN_1,HIDDEN_LEN_2)
 layer3 = TanhLayer("tanh_layer34",HIDDEN_LEN_2,OUT_LEN)
 full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
 
