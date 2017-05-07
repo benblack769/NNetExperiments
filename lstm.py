@@ -381,4 +381,5 @@ def output_trains(learner,input_ar,exp_ar,num_trains):
             in3dtens = np.rollaxis(in3dtens,-1)
             expected = exp_ar[:,mid+1:end+1]
             yield in3dtens,expected
-        print("train_epoc"+str(i),flush=True)
+        if num_trains > 1:
+            print("train_epoc"+str(i),flush=True)

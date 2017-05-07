@@ -1,15 +1,17 @@
 from plot_data import TimeData
+import os
 
-foldname = "plot_data/joined_data_lstm9_v2/"
-layer_names = ["layer1_","layer9_","tanh_layer_"]
-td = TimeData(foldname+"error_mag.tsv")
-td.average_n_steps(50)
-td.show_plot()
-for lname in layer_names:
-    td = TimeData(foldname+lname+"cell_forget_weights.tsv")
-    td.show_plot()
-    td = TimeData(foldname+lname+"cell_add_weights.tsv")
-    td.show_plot()
+'''
+foldnames = [
+    "plot_data/model2layer1_200tanh_layer34_1_train_test/",
+    "plot_data/model2layer2_400tanh_layer34_2_train_test/"
+]'''
+foldnames = ["plot_data/layer501layer402tanh_layer34_train_test/"]
+for fold in foldnames:
+    for filename in os.listdir(fold):
+        td = TimeData(fold+filename)
+        td.average_n_steps(50)
+        td.show_plot()
 
 '''
 fname = "plot_data/cell_time_plot/cell_state_data.tsv"
