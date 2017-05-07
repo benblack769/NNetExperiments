@@ -10,17 +10,17 @@ BATCH_SIZE = 256
 
 IN_LEN = string_processing.CHARS_LEN
 HIDDEN_LEN_1 = 500
-HIDDEN_LEN_2 = 600
+HIDDEN_LEN_2 = 400
 OUT_LEN = string_processing.CHARS_LEN
 
 layer1 = LSTM_Layer("layer501",IN_LEN,HIDDEN_LEN_1)
-layer2 = LSTM_Layer("layer602",HIDDEN_LEN_1,HIDDEN_LEN_2)
+layer2 = LSTM_Layer("layer402",HIDDEN_LEN_1,HIDDEN_LEN_2)
 layer3 = TanhLayer("tanh_layer34",HIDDEN_LEN_2,OUT_LEN)
 full_layer = TwoLayerLSTM(TwoLayerLSTM(layer1,layer2),layer3)
 
-optimizer = RMSpropOpt(0.01)
+optimizer = RMSpropOpt(0.02)
 
-full_layer_learner = Learner(full_layer,optimizer,calc_error_catagorized,BATCH_SIZE,SEQUENCE_LEN)
+full_layer_learner = Learner(full_layer,optimizer,calc_error_squared,BATCH_SIZE,SEQUENCE_LEN)
 
 def generate_text_input():
     train_str = string_processing.get_str("data/huck_fin.txt")

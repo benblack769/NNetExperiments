@@ -31,34 +31,32 @@ So what makes these so powerful? What made people think they could be improved w
 
 ### Recurrent Networks and Time Sequence Learning
 
-First, what is a recurrent network? It tries to solve a common problem that humans solve, which is recognizing sequences over time. So, a recurrent network looks at things like songs or text one time unit at a time. For example, RNNs are used for voice recognition, i.e. turning a sequence of sound waves into a sequence of letters.
+First, what is a recurrent network? It tries to solve a common problem that humans solve, which is recognizing sequences over time. It does this by looking at the data one timestep at a time, only storing a fixed ammount of data from previous timesteps. For example, RNNs are used for voice recognition, i.e. turning a sequence of sound waves into a sequence of letters.
 
 A recurrent network broadly it looks like this:
 
 ![long term dependencies image](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/RNN-longtermdependencies.png "Long term dependencies")
 
-The major parts are the input, a state which is a function of the previous inputs, and the output, which is a function of the previous state. For voice recognition, the output would then be compared to the expected output, which is usually computed by hand (by writing out the text that the person is saying). Then, as long as the function A is differentiable, we can use backpropagation with gradient descent. While I won't go too deep into gradient descent, I will mention what it looks like. We store the inputs and states for several time steps back. Then we attempt to find out which internal parameters in the function contributed to the output the most. We then change these parameters so that they make the function output what we expected it to. To help conceptualize this, look at the diagram above. Suppose h3 is purely a function of x0 and x1. Then we would want to change the parameters in the A function so that this occurs.
+The major parts are the input, a state which is a function of the previous inputs, and the output, which is a function of the previous state. For voice recognition, the input would be some representation of sound waves, and the output would be text. In order to train the model, the output would then be compared to the expected output, which is usually computed by hand (by writing out the text that the person is saying). Then, as long as the function A is differentiable, we can use backpropagation with gradient descent in order to get it to learn. I'll explore gradient descent in more detail later.
 
 So how do we construct such a function so that we can nicely change the parameters like that? The obvious construction follows directly from ordinary deep neural networks.
 
 #### Description of ordinary recurrent networks
+
+Traditional RNNs are built as follows:
+
+![long term dependencies image](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/LSTM3-SimpleRNN.png "Long term dependencies")
+
+The
+
 #### Why ordinary RNNs fail
 cite http://www-dsi.ing.unifi.it/~paolo/ps/tnn-94-gradient.pdf
 #### Description of LSTM networks
 #### Some broad intuition for why they might work better
 
+#### Gradient descent
 
-## Thoughts on Debugging Neural Networks
-
-Now, when people show you their neural network code, you go off happy, and try to run it, and it may work, but good luck making any changes. Neural nets are notoriously tricky. Out of all the code I have ever written, they have the greatest barriers to debugging. The code will run with several major errors, but it will not do what you want to do without everything being perfect. I this is an interesting contrast to standard AI techniques, which may be fiddly, but if you make one minor error in the code, then usually most things work fine, or it crashes immediately, or at the very least, it is easy to trace back what exactly went wrong. In general, it is easy to debug.
-
-This leads me to think that neural nets require an entirely different view of computation than symbolic AI. For GOFAI, we are navigating around some sort of finite state machine, or some sort of symbol processor, or decision tree, or something, and in all of these, we can think about the program moving around, doing different things in different cases. For neural nets, there are no conditionals in the main part of the code. You can write out just about every ANN ever invented without loops, if statements or recursion. This is not only speculation or theory, some code I wrote does just this, outputting code without loops that computes a simple neural net.
-
-To summarize: in neural networks, data is the only thing being changed.
-
-I think this is a fundamental difference in software thought, which requires new debugging tools, new tests, new debugging thought processes, and maybe even new hardware. Instead of thinking about an instruction pointer going around, we need to think about data changing, its interactions with data around it, how it accumulates, increments, and compounds. We need visualizations which allows us to see how the data is changing, not which instruction the computer is following.
-
-In order to accomplish this, I made a tools that save values in the network to a file (plot_utility.py), and a tool which uses MatPlotlib to create a visualization of that data (plot_data.py). More about this later.
+We store the inputs and states for several time steps back. Then we attempt to find out which internal parameters in the function contributed to the output the most. We then change these parameters so that they make the function output what we expected it to. To help conceptualize this, look at the diagram above. Suppose h3 is purely a function of x0 and x1. Then we would want to change the parameters in the A function so that this occurs.
 
 ## Actual Implementations and Some Results
 
@@ -80,13 +78,15 @@ I used my tool to get the biases as they were training to see if they eventually
 
 As you can see, it does not seem to stabilize perfectly, even over hundreds of iterations over the dataset. Instead it seems to slip every once in awhile into a new sort of state.
 
-#### Optimizers (RMSprop)
+## Optimizers (RMSprop)
 
 First, a quick overview of the history of ANN optimizers:
 
 http://sebastianruder.com/optimizing-gradient-descent/index.html#adadelta
 
 Gradient descent has many well studied mathematical problems. It gets stuck in local minima, it can bounce around between the sides of a valley before coming to a rest at the bottom, and other problems. Attempts to come to a solution have often been too slow, or not generally applicable. The evolution of these has accumulated in three general purpose optimizing algorithms, Adam, AdaDelta, and RMSprop. All of these have slight alterations to the basic gradient descent which try to intelligently pick the size of the step.  I implemented RMSprop because of its simplicity and power. Amazingly, this widely used and generally admired optimizer was first introduced to the world through some slides on a Coursera class ([link](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)).
+
+#### Description
 
 Here is the actual formula that is used to calculate it:
 
@@ -97,9 +97,11 @@ Gramma and alpha are parameters that you get to pick. gamma is usuaally around 0
 [This](http://sebastianruder.com/optimizing-gradient-descent/) great blog describing this problem in detail buit some small dimentional visualizations to capture this intuition, and show how it performs in comparison to other approaches, like the momentum approach.
 
 This one shows an example of how momentum approaches can do worse than RMSprop and AdaDelta.
+
 ![grad1](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad1.gif "Long term dependencies")
 
 This one shows how RMSprop can get out of an unstable equilibria very quickly.
+
 ![grad2](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/grad2.gif "Long term dependencies")
 
 However, these are contrived low dimentional problems. We want to know if these things actually work on extremely high dimentional neural networks training on real problems.
@@ -120,13 +122,13 @@ To me, this suggests that RMSprop is simply operating at a different level than 
 
 Instead, it seems to be more similar to how humans experience sensation. When we have more inputs: our eyes are open, we are seeing lots of bright things, listening to loud music, etc, then it is harder to focus on smaller details. Only the most extreme sensations stand out.
 
-While sensation and learning do not really seem to be innately related, I think RMSprop and the human tendancy to adjust to the total ammount of senation are solving a similar problem: that just because there is more to see, or more to learn does not necessarily mean that it is that much more important.
+Sensation and learning do not really seem to be innately related. In fact, they are in a way fundamentally differnet: rmsprop's optimizer has to do with regularizing outputs, and sensation has to do with managing inputs. h I think RMSprop and the human adjustment of senation are solving a similar problem: that just because there is more to see, or more to learn does not necessarily mean that it is that much more important.
 
 ## LSTM
 
 ### Structure
 
-Colah's blog post [here](http://colah.github.io/posts/2015-08-Understanding-LSTMs/) is a great description of the structural aspects of LSTMs. 
+Colah's blog post [here](http://colah.github.io/posts/2015-08-Understanding-LSTMs/) is a great description of the structural aspects of LSTMs.
 
 ![lstm-diagram](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/basic_test_plots/LSTM3-chain.png "biases in output layer using rmsprop")
 
@@ -161,8 +163,32 @@ Because solving problems is easier than figuring out fundamental reasons for phe
 
 I think that this condensation over time is vital to creating human level intelligence. The very idea of attention is related to the conscious self, which can only focus on a small number of things at a time. So it relies on something lower level to condense the relevant information to something we can reasonably expect the machine to focus on.
 
+### Model 1
 
-## Appendix A: Execution and Debugging of Neural Network Code
+
+
+### Model 2
+
+Model 1 lacked some basic intutive framework, which is why it is so hard to interpret its results. So I designed a new model.
+
+It is easy to imageing music as a set of waves. Not the individual sound waves, but the overall feeling of the rise and fall of the music, and all the little twists inside that. Perhaps text works in a similar sort of way. There are rises and falls of sound Especially considering poetry and vocal music, perhaps it is not completly implausible to think of text in this way.  working the same sort of way, with a
+
+## Appendix A: Thoughts on Debugging Neural Networks
+
+Now, when people show you their neural network code, you go off, and try to run it, and it may work, but good luck making any changes. Neural nets are notoriously tricky. Out of all the code I have ever written, they have the greatest barriers to debugging. The code will run with several major errors, but it will not do what you want to do without everything being perfect. This is the case because there are no conditionals in the main part of the code. You can write out just about every ANN ever invented without loops, if statements or recursion. This is not only speculation or theory, some code I wrote does just this, outputting code without loops that computes a simple, but practically useful neural net (see my [Graph Optimizer](https://github.com/weepingwillowben/GraphOptimizer) project for more details). What this means is that every part of the code is important to every part of the computation. There is not any part of the code which is not run for certain problems.
+
+I this is an interesting contrast to standard AI techniques, which may be fiddly, but if you make one minor error in the code, then usually most things work fine, or it crashes immediately, or at the very least, it is easy to trace back what exactly went wrong. In general, it is easy to debug. This is because for GOFAI, we are navigating around some sort of finite state machine, or some sort of symbol processor, or decision tree, or something, and in all of these, we can think about the program moving around, doing different things in different cases. This is the case because the symbolic concepts of the AI tend to be directly correspond to exact lines of code, or at least a fairly small section of code.
+
+I belive that this difference between GOFAI and neural networks is intracatly interrelated to the difference between symbolic and sub-symbolic computation. This suggests that while sub-symbolic computation poses many solutions to philosophical and computational problems, it poses an engeneering problem: how do we examine a bit of code which every part, every peice of data affects every other part?
+
+Solving this problem requires new debugging tools, new tests, new debugging thought processes, and maybe even new hardware. Instead of thinking about an instruction pointer going around, we need to think about data changing, its interactions with data around it, how it accumulates, increments, and compounds. We need visualizations which allows us to see how the data is changing, not which instruction the computer is following.
+
+My solution was to create line graphs that displayed certain values over time. Many of those graphs are above. In order to do this easily I made a simple tool that save values in the network to a file (plot_utility.py), and a tool which uses MatPlotlib to create a visualization of that data (plot_data.py).
+
+However, this is admitedly a deeply imperfect solution, as these line graphs only display a small fraction of the data, and not too clearly at that. It is also extremely difficult to see how they are intereacting. Causality is completly confounded. This makes my plots not as useful as I hoped they would be. However, I belive that there are better ways out there to look at the real computation happening inside the data.
+
+
+## Appendix B: Execution and Debugging of Neural Network Code
 
 ### Theano
 
