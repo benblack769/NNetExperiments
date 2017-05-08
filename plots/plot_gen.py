@@ -1,12 +1,12 @@
 from plot_data import TimeData
 import os
 
-'''
+
 foldnames = [
-    "plot_data/model2layer1_200tanh_layer34_1_train_test/",
-    "plot_data/model2layer2_400tanh_layer34_2_train_test/"
-]'''
-foldnames = ["plot_data/layer501layer402tanh_layer34_train_test/"]
+    "plot_data/model2layer1_200tanh_layer34_1_train_test00/",
+    "plot_data/model2layer2_400tanh_layer34_2_train_test00/"
+]
+#foldnames = ["plot_data/layer501layer402tanh_layer34_train_test/"]
 for fold in foldnames:
     for filename in os.listdir(fold):
         td = TimeData(fold+filename)
