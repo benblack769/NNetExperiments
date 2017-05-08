@@ -123,9 +123,19 @@ def predict_model():
     [outputs] = pred_fn(inp1)
     print(string_processing.out_list_to_str(outputs))
 
+def save_text(filename,outtxt):
+    with open(filename,"w") as file:
+        file.write(outtxt)
 
-predict_model()
-train_model()
+def save_full_prediction():
+    inp1,_ = get_inputs_unbatched(text_in)
+    pred_fn = full_layer_learner1.get_stateful_predict()
+    [outputs] = pred_fn(inp1)
+    str1 = string_processing.out_list_to_str(outputs)
+    save_text("sampled_outputs/model2.txt",str1)
+
+save_full_prediction()
+#train_model()
 
 def run():
     text_in = generate_text_input()

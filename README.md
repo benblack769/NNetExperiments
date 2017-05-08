@@ -194,8 +194,11 @@ Unfortunately, after 3 days, it still did not really finish training, as you can
 
 ![deep error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/deep_lstm_plots/joined_data_layer501layer402error_mag.png "deep error")
 
+As it did not learn fully, it did not reach the levels of the much simpler networks, only guessing the right letter 49.7% percent of the text correctly. To me this exemplifies the tradeoff with deeper networks: it might work better evetually, but it also may take forever to learn.
 
 ## LSTM Part 2: improving the network
+
+### Why try to improve the network?
 
 Unfortunately, it is difficult to test theoretical hypothesis of how LSTMs really work. We know they work, and we can state properties of them, but especially something as complicated as LSTMs, it is hard to concretely track down any sort of causation or fundamental nature.
 
@@ -209,15 +212,47 @@ My first attempted improvement tried to see if one network can learn something a
 
 #### Inspiration
 
-Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current techniques like stacking LSTMS do this efficiently.
+Attention based networks have made significant strides in time sequence analysis, such as translation. But current methods are inefficient for long time series. One potential goal of a lower level network model is to condense the important information in a long time series into a relatively small number of steps, each of which containing a reasonable amount of information. In other words, to compress the time scale of the data, without hugely increasing the spatial scale. It is not clear that current techniques like layering LSTMS do this efficiently.
 
 I think that this condensation over time is vital to creating human level intelligence. The very idea of attention is related to the conscious self, which can only focus on a small number of things at a time. So it relies on something lower level to condense the relevant information to something we can reasonably expect the machine to focus on.
 
+#### Description
+
+Basically, I want to see if we can use the cell state of a network which is performing the learning task in order to make another task learn better or faster.
+
+But what do I mean by "use the cell state"? What I worked out is that we can build another LSTM which tries to predict the next cell state of the other model. So I have an LSTM which can understand the nature of the other LSTM.
+
+Then I can use a third LSTM to learn from the output of the second and the original text in order to learn the task faster or better.
+
+My results were that the 3rd LSTM actually did learn much faster, but not substantively better than the first (both had 200 cell states).
+
+Try comparing the two plots below, the first is the 3rd LSTM, which takes in input the one that understands the first LSTM, and the first LSTM. They both have identical parameters for everything else.
+
+![basic error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/lstm_plots/altered_plots/stage3learn.png "basic error")
+![3rd layer error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/lstm_plots/altered_plots/basic_learn.png "3rd layer error")
+
+As you can tell, the 3rd LSTM actually learns much, much faster. In fact, the it stablizes complely at around cost=260, whereas the first one very slowly declines to around 270.
+
+It also classifies slightly better, at 57% charachters guessed correctly rather than 54%. But since I didn't train to exaustion, this may just be a result that it learned faster (although this highlights the fact that in certain circumstances learning better and learning faster are pretty much the same).
+
+In hindsight, I am suprized this approach worked as well as it did. It also became clear that this model cannot possibly become better than the original, because the second LSTM can only learn what the 1st one is doing, so it cannot actually help improve upon it.
+
+
 ### Model 2
 
-Model 1 lacked some basic intuitive framework, which is why it is so hard to interpret its results. So I designed a new model.
+Model 1 lacked some basic intuitive framework, which is why it did not quite succeed as well as I hoped. So I designed a new model, with a stronger intutition.
 
-It is easy to imagine music as a set of waves. Not the individual sound waves, but the overall feeling of the rise and fall of the music, and all the little twists inside that. Now consider that the actual music might just be a condensation of those higher dimensional waves into sound waves. Perhaps text works in a similar sort of way. There are rises and falls of sound Especially considering poetry and vocal music, perhaps it is not completely uninformative to think of text in this way. Also remember that this model does not need to be a perfect description to be useful. It just has to work most of the time.
+
+#### Intuition and inspiration
+
+It is easy to imagine music as a set of waves. Not the individual sound waves, but the overall feeling of the rise and fall of the music, and all the little twists inside that. Now consider that the actual music might just be a condensation of those higher dimensional waves into sound waves. Perhaps text works in a similar sort of way. There are rises and falls of feeling in the text, of which the text is only a crude representation. Especially considering poetry and vocal music, perhaps it is not completely uninformative to think of text in this way. Also remember that this model does not need to be a perfect description to be useful. It just has to work most of the time.
+
+Now imaging that you have some function approximator for this wave  (your LSTM). This LSTM's cell state is trying to approximate the wave, and the output is a translation of that aproximated wave into text.
+
+Now suppose that the wave has more dimentions than the LSTM has cell states. Then of course the approximation is going to be deeply imperfect. But perhaps you can think of the approximation as a mapping from that ideal wave that is like the text, but differnet, and hopfully more descriptive of it. And just like the when we were dealing with text, we can build an LSTM to predict it.
+
+#### Results
+41.9% Ouch!
 
 ## Conclusion
 
@@ -230,7 +265,7 @@ In this attempt to try to understand LSTMs, I learned that there a number of imp
 * Depth of the network and how that depth affects learning
 * Hardware performance and batched learning
 
-All of these have been studied in quite some depth independently. In my attempt to learn and understand everything at once, I went a little over my head and failed to get results for some of the more difficult experiments at the end.
+All of these have been studied in quite some depth independently. In my attempt to learn and understand everything at once, I went a little over my head and failed to get decent results for some of the more difficult experiments at the end.
 
 However, by studying them all, I encountered some consistent themes.
 
@@ -242,6 +277,8 @@ Second, LSTMs are hard to work with, and even harder to improve. Training takes 
 2. These tasks are fundamentally quite difficult to learn, and our brains are simply incredibly well suited to learning these sorts of tasks.
 
 Note that these are not mutually exclusive. But the second one suggests that significant hardware advancements might be necessary for machines to truly reach human level ability.
+
+Third,
 
 ## Appendix A: Thoughts on Debugging Neural Networks
 
