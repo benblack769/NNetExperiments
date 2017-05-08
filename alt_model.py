@@ -25,7 +25,7 @@ layer2 = LSTM_Layer("model2layer2_400",HIDDEN_LEN_1,HIDDEN_LEN_2)
 layer2tan = TanhLayer("tanh_layer34_2",HIDDEN_LEN_2,HIDDEN_LEN_1)
 full_layer2 = TwoLayerLSTM(layer2,layer2tan)
 
-optimizer = RMSpropOpt(0.06)
+optimizer = RMSpropOpt(0.03)
 
 full_layer_learner1 = Learner(full_layer1,optimizer,calc_error_squared,LEARN_BATCH_SIZE,SEQUENCE_LEN)
 full_layer_learner2 = Learner(full_layer2,optimizer,calc_error_squared,LEARN_BATCH_SIZE,SEQUENCE_LEN)
@@ -132,7 +132,7 @@ def save_full_prediction():
     pred_fn = full_layer_learner1.get_stateful_predict()
     [outputs] = pred_fn(inp1)
     str1 = string_processing.out_list_to_str(outputs)
-    save_text("sampled_outputs/model2.txt",str1)
+    save_text("sampled_outputs/model2_full.txt",str1)
 
 save_full_prediction()
 #train_model()

@@ -43,6 +43,6 @@ def str_accuracy(str1,str2):
     #assert len(str1)==len(str2),"compared string need to be equal in length"
     return sum(c1==c2 for c1,c2 in zip(str1,str2))/len(str1)
 
-gentext = get_raw_str("sampled_outputs/model2.txt")
+gentext = get_raw_str("sampled_outputs/model2_full.txt")
 orig_text = get_str("data/huck_fin.txt")[1:]
 print(str_accuracy(gentext,orig_text))
