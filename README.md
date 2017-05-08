@@ -155,7 +155,45 @@ https://www.gutenberg.org/wiki/Gutenberg:The_Project_Gutenberg_License))
 
 I trained this using a network with cell states of 200. Afterwards it matched text like so:
 
-![grad2](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/textgen.PNG "Long term dependencies")
+![generated text](https://raw.githubusercontent.com/weepingwillowben/music_net/master/diagrams/textgen.PNG "Top text is original, bottom text is guessed")
+
+Top text is original, bottom text is the guessed next letter. To see how it performs, you should look at the previous letters and see if you can guess what the next letter would be just from those. Then see if the machine guessed it.
+
+As you can see, it tends to simply guess spaces, and ends of common words. At the beginnings of words, and in less common words like "adventures" ti does very poorly. Overall, the results are not particularly impressive. I ran it on the whole text, and it only guesses 54% of the letters correct. Comparing this to standard compression algorithms, which can compress ordinary text into 1/8 of the space without any knowledge of the language, this is pretty bad.
+
+So why might it be relatively poor? There are many practical reasons. For example, my network may have not trained fully, 200 cell states might just be too few, etc. But before I go over that, I would like to look at exactly how it trained.
+
+### Visualizations of the training
+
+Here is a typical view of how the error updates over a long period of training.
+
+![generated text](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/lstm_plots/500_cost_decreasing_noisy.png "500 width algorithm")
+
+There are three main stages I observed. The first stage, there is very quick learning. Then, it stablizes to almost completlely linear. Then it goes on like that for awhile until it eventually flattens out. I saw this in almost every plot of error for the guessing the next letter task.
+
+The part where it becomes almost linear is deeply confusing to me. Part of it might be the effect of RMSprop increasing the learning rate if the error decreases, but even still, I feel like learning should be more similar to exponential decay than linear decay. After all, surely if you learn a little it is harder to learn more.
+
+Experimenting with the learning parameter a little, and increaseing causes it to stop learning at all (the cost will actually increase a little, then stablize), and decreasing the cost will just make it learn at a lower linear slope. I am not sure what to read from this behavior of training, but it is a curiosity. Perhaps it is related to the structure of LSTMs somehow. I have a suspicion it might have to do with the way the forget gate can only learn things if the previous add gates have already learned things, which then allows those add gates to learn more. This definitly warrents some futhur investigation, but I do not have time here to explore it comprehensively.
+
+### Standard improvements
+
+So if the result is poor, then there are many ways people like to intrdouce which may help the LSTM.
+
+* Dropout and/or regularization
+* Fiddling with learning parameter (particularly lowering it, and training it for longer)
+* Layering multiple LSTMs on top of each other
+* Many others...
+
+Unfortunately, I will only explore the 3rd option, layering. It seems like the most important, and most likely to seriously improve my network.
+
+### Deep Layering
+
+So my next attempt to make this better was to layer two LSTMs on top of another. I also made the cell states larger, to around 500 for both layers.
+
+Unfortunately, after 3 days, it still did not really finish training, as you can see from the error not stablizing:
+
+![deep error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/deep_lstm_plots/joined_data_layer501layer402error_mag.png "deep error")
+
 
 ## LSTM Part 2: improving the network
 

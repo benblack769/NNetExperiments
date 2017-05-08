@@ -32,3 +32,17 @@ def out_list_to_str(outlist):
 def calc_str_errors(output_str,correct_str):
     assert len(output_str) == len(correct_str)
     return len(output_str) - sum(o==c for o,c in zip(output_str,correct_str))
+
+def generate_text_input():
+    train_str = get_str("data/huck_fin.txt")
+    in_vec_list = in_vec(train_str)
+    in_stack = np.vstack(in_vec_list)
+    return in_stack
+
+def str_accuracy(str1,str2):
+    #assert len(str1)==len(str2),"compared string need to be equal in length"
+    return sum(c1==c2 for c1,c2 in zip(str1,str2))/len(str1)
+
+#gentext = get_raw_str("sampled_outputs/wide_500_text.txt")
+#orig_text = get_str("data/huck_fin.txt")[1:]
+#print(str_accuracy(gentext,orig_text))

@@ -28,14 +28,24 @@ def generate_text_input():
     in_stack = np.vstack(in_vec_list)
     return in_stack
 
+def save_text(filename,outtxt):
+    with open(filename,"w") as file:
+        file.write(outtxt)
+
 def run():
     text_in = generate_text_input()
     NUM_EPOCS = 500
-    train(full_layer_learner,text_in,text_in,NUM_EPOCS)
-    [outs] = full_layer_learner.get_stateful_predict()(text_in[:1000])
+    #train(full_layer_learner,text_in,text_in,NUM_EPOCS)
+    state_pred = full_layer_learner.get_stateful_predict()
+    [outs] = state_pred(text_in[:1000])
     #np.set_printoptions(threshold=np.inf)
     print(outs)
     print(string_processing.out_list_to_str(outs))
+    [full_outs] = state_pred(text_in)
+    outstr = string_processing.out_list_to_str(full_outs)
+    save_text("sampled_outputs/deep_learner.txt",outstr)
+
+
 
 def test():
     text_in = generate_text_input()

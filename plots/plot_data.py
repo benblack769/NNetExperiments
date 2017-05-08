@@ -84,3 +84,9 @@ class TimeData:
         for d in self.data:
             plt.plot(self.times,d)
         plt.show()
+
+    def save_plot(self,filename):
+        for d in self.data:
+            plt.plot(self.times,d)
+        plt.savefig(filename)
+        plt.close()
