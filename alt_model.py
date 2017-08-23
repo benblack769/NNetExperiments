@@ -8,7 +8,7 @@ import random
 
 SEQUENCE_LEN = 50
 LEARN_BATCH_SIZE = 128
-GET_INPUT_BATCH_SIZE = 4
+GET_INPUT_BATCH_SIZE = 1
 GET_INPUT_LEN = 400
 TRAIN_BATCHES=100000000
 
@@ -123,6 +123,13 @@ def predict_model():
     [outputs] = pred_fn(inp1)
     print(string_processing.out_list_to_str(outputs))
 
+def calc_lay1_cells():
+    inp1,_ = get_inputs_unbatched(text_in[10000:20000])
+    pred_fn = full_layer_learner1.get_stateful_cells()
+    [outputs] = pred_fn(inp1)
+    #print(outputs)
+    #print(np.max(np.abs(outputs)))
+
 def save_text(filename,outtxt):
     with open(filename,"w") as file:
         file.write(outtxt)
@@ -134,6 +141,7 @@ def save_full_prediction():
     str1 = string_processing.out_list_to_str(outputs)
     save_text("sampled_outputs/model2_full.txt",str1)
 
+#calc_lay1_cells()
 save_full_prediction()
 #train_model()
 

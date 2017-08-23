@@ -258,7 +258,7 @@ class Learner:
             outputs_info = [None]+out_inf_cells
         )
         outs = all_outputs[0]
-        cells=all_outputs[1:]
+        cells = all_outputs[1:]
         return cells,outs
 
     def prop_through_sequence(self,invecs):
@@ -330,7 +330,7 @@ class Learner:
         cells,outs = self.my_scan(stateful_inputs,False)
         return theano.function(
             [stateful_inputs],
-            [cells]
+            [cells[0]]
         )
 
 def to_numpys(outlist):

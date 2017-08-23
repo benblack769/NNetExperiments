@@ -6,14 +6,15 @@ import os
 #    "plot_data/model2layer1_200tanh_layer34_1_train_test00/",
 #    "plot_data/model2layer2_400tanh_layer34_2_train_test00/"
 #]
-foldnames = ["plot_data/joined_data_layer501layer402/"]
+foldnames = ["plot_data/model2layer2_400tanh_layer34_2_train_test0000000000000000000/",
+            "plot_data/model2layer1_200tanh_layer34_1_train_test0000000000000000000/"]
 for fold in foldnames:
     for filename in os.listdir(fold):
         td = TimeData(fold+filename)
         td.average_n_steps(50)
         bef_png_name = filename[:filename.index(".")]
         bef_fold_name = fold[10:-1]
-        td.save_plot("deep_lstm_plots/"+bef_fold_name+bef_png_name+".png")
+        td.save_plot("experimental_plots/"+bef_fold_name+bef_png_name+".png")
 
 '''
 fname = "plot_data/cell_time_plot/cell_state_data.tsv"

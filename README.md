@@ -10,15 +10,6 @@ If you have a good understanding of linear algebra and multidimensional calculus
 
 ### Inspiration and Goal
 
-UNDERSTANDING IS THE MOST IMPORTANT THING FOR THIS FINAL PROJECT
-
-STRUCTURE LEADS TO MORE SIGNIFICANT RESULTS THAN MATHMATICAL TRICKS.
-
-THE LEARNING TASK OF GUESSING THE NEXT LETTER IS NOT REALLY A RENFORCEMENT LEARNING TASK. RATHER, i
-
-THE COMPRESSION ALGORIHM IS USEFUL BECAUSE IF YOU CAN DO THAT< THEN YOU CAN DO ALL THESE OTHER THINGS TOO, like natural language processing.
-
-
 One thing to know about LSTMs is that they are invented in 1999, and are still by far the best general purpose time series predictor known. This is not due to a lack of effort. There have been advances in
 
 * Mathematics: Hessian free optimization, an  effective second order optimization model, has been successfully applied to neural networks)
@@ -159,7 +150,7 @@ I trained this using a network with cell states of 200. Afterwards it matched te
 
 Top text is original, bottom text is the guessed next letter. To see how it performs, you should look at the previous letters and see if you can guess what the next letter would be just from those. Then see if the machine guessed it.
 
-As you can see, it tends to simply guess spaces, and ends of common words. At the beginnings of words, and in less common words like "adventures" ti does very poorly. Overall, the results are not particularly impressive. I ran it on the whole text, and it only guesses 54% of the letters correct. Comparing this to standard compression algorithms, which can compress ordinary text into 1/8 of the space without any knowledge of the language, this is pretty bad.
+As you can see, it tends to simply guess spaces, and ends of common words. At the beginnings of words, and in less common words like "adventures" it does very poorly. Overall, the results are not particularly impressive. I ran it on the whole text, and it only guesses 54% of the letters correct. Comparing this to standard compression algorithms, which can compress ordinary text into 1/8 of the space without any knowledge of the language, this is pretty bad.
 
 So why might it be relatively poor? There are many practical reasons. For example, my network may have not trained fully, 200 cell states might just be too few, etc. But before I go over that, I would like to look at exactly how it trained.
 
@@ -169,15 +160,15 @@ Here is a typical view of how the error updates over a long period of training.
 
 ![generated text](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/lstm_plots/500_cost_decreasing_noisy.png "500 width algorithm")
 
-There are three main stages I observed. The first stage, there is very quick learning. Then, it stablizes to almost completlely linear. Then it goes on like that for awhile until it eventually flattens out. I saw this in almost every plot of error for the guessing the next letter task.
+There are three main stages I observed. The first stage, there is very quick learning. Then, it stabilizes to almost completely linear cost decrease. Then it goes on like that for awhile until it eventually flattens out. I saw this in almost every plot of error for the "guess the next letter" task.
 
 The part where it becomes almost linear is deeply confusing to me. Part of it might be the effect of RMSprop increasing the learning rate if the error decreases, but even still, I feel like learning should be more similar to exponential decay than linear decay. After all, surely if you learn a little it is harder to learn more.
 
-Experimenting with the learning parameter a little, and increaseing causes it to stop learning at all (the cost will actually increase a little, then stablize), and decreasing the cost will just make it learn at a lower linear slope. I am not sure what to read from this behavior of training, but it is a curiosity. Perhaps it is related to the structure of LSTMs somehow. I have a suspicion it might have to do with the way the forget gate can only learn things if the previous add gates have already learned things, which then allows those add gates to learn more. This definitly warrents some futhur investigation, but I do not have time here to explore it comprehensively.
+Experimenting with the learning parameter a little, and increasing causes it to stop learning at all (the cost will actually increase a little, then stabilize), and decreasing the cost will just make it learn at a lower linear slope. I am not sure what to read from this linear behavior of training, but it is a curiosity. Perhaps it is related to the structure of LSTMs somehow. I have a suspicion it might have to do with the way the forget gate can only learn things if the previous add gates have already learned things, which then allows those add gates to learn more. This definitely warrants some more investigation, but I do not have time here to explore it comprehensively.
 
 ### Standard improvements
 
-So if the result is poor, then there are many ways people like to intrdouce which may help the LSTM.
+So if the result is poor, then there are many ways people like to introduce which may help the LSTM.
 
 * Dropout and/or regularization
 * Fiddling with learning parameter (particularly lowering it, and training it for longer)
@@ -190,11 +181,11 @@ Unfortunately, I will only explore the 3rd option, layering. It seems like the m
 
 So my next attempt to make this better was to layer two LSTMs on top of another. I also made the cell states larger, to around 500 for both layers.
 
-Unfortunately, after 3 days, it still did not really finish training, as you can see from the error not stablizing:
+Unfortunately, after 3 days, it still did not really finish training, as you can see from the error not stabilizing:
 
 ![deep error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/deep_lstm_plots/joined_data_layer501layer402error_mag.png "deep error")
 
-As it did not learn fully, it did not reach the levels of the much simpler networks, only guessing the right letter 49.7% percent of the text correctly. To me this exemplifies the tradeoff with deeper networks: it might work better evetually, but it also may take forever to learn.
+As it did not learn fully, it did not reach the levels of the much simpler networks, only guessing the right letter 49.7% percent of the text correctly. To me this exemplifies the tradeoff with deeper networks: it might work better eventually, but it also may take forever to learn.
 
 ## LSTM Part 2: improving the network
 
@@ -231,28 +222,19 @@ Try comparing the two plots below, the first is the 3rd LSTM, which takes in inp
 ![basic error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/lstm_plots/altered_plots/stage3learn.png "basic error")
 ![3rd layer error](https://raw.githubusercontent.com/weepingwillowben/music_net/master/plots/lstm_plots/altered_plots/basic_learn.png "3rd layer error")
 
-As you can tell, the 3rd LSTM actually learns much, much faster. In fact, the it stablizes complely at around cost=260, whereas the first one very slowly declines to around 270.
+As you can tell, the 3rd LSTM actually learns much, much faster. In fact, the it stabilizes completely at around cost=260, whereas the first one very slowly declines to around 270.
 
-It also classifies slightly better, at 57% charachters guessed correctly rather than 54%. But since I didn't train to exaustion, this may just be a result that it learned faster (although this highlights the fact that in certain circumstances learning better and learning faster are pretty much the same).
+It also classifies slightly better, at 57% of letters guessed correctly rather than 54%. But since I didn't train to exhaustion, this may just be a result that it learned faster (although this highlights the fact that in certain circumstances learning better and learning faster are pretty much the same as time is restricted).
 
-In hindsight, I am suprized this approach worked as well as it did. It also became clear that this model cannot possibly become better than the original, because the second LSTM can only learn what the 1st one is doing, so it cannot actually help improve upon it.
+In hindsight, I am surprised this approach worked as well as it did. It also became clear that this model cannot possibly become better than the original, because the second LSTM can only learn what the 1st one is doing, so it cannot actually help improve upon it. So the third layer can't possibly do better than the first.
 
+On the other hand, the fact that it trained so much faster suggests that the second layer really did learn something important about how the first one operates, information that another neural net can easily use.
 
-### Model 2
+The next step in this exploration would be to see if the 3rd layer can be replaced by another layer which instead of trying to guess the next letter, performs some other learning task, such as trying to calculate the part of speech of the word (it would only output anything at the end of each word).
 
-Model 1 lacked some basic intuitive framework, which is why it did not quite succeed as well as I hoped. So I designed a new model, with a stronger intutition.
+While I did not have time to execute this and see if it works, I suspect it will. If this is true, then I have successfully condensed down some information about english into a form more easily processed by LSTMs than raw letters. I would say that this is the machine abstracting, condensing, and packaging english. Perhaps this way it can behave like humans do when we learn a task faster the second time, or learn a similar task faster.
 
-
-#### Intuition and inspiration
-
-It is easy to imagine music as a set of waves. Not the individual sound waves, but the overall feeling of the rise and fall of the music, and all the little twists inside that. Now consider that the actual music might just be a condensation of those higher dimensional waves into sound waves. Perhaps text works in a similar sort of way. There are rises and falls of feeling in the text, of which the text is only a crude representation. Especially considering poetry and vocal music, perhaps it is not completely uninformative to think of text in this way. Also remember that this model does not need to be a perfect description to be useful. It just has to work most of the time.
-
-Now imaging that you have some function approximator for this wave  (your LSTM). This LSTM's cell state is trying to approximate the wave, and the output is a translation of that aproximated wave into text.
-
-Now suppose that the wave has more dimentions than the LSTM has cell states. Then of course the approximation is going to be deeply imperfect. But perhaps you can think of the approximation as a mapping from that ideal wave that is like the text, but differnet, and hopfully more descriptive of it. And just like the when we were dealing with text, we can build an LSTM to predict it.
-
-#### Results
-41.9% Ouch!
+If an LSTM on another learning task does not work, then it still shows that the cell state contains some infromation that can be used for something, even if my particular model did not work very well.
 
 ## Conclusion
 
